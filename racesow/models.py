@@ -56,6 +56,7 @@ class Map(models.Model):
         races (int): Number of completed races
         playtime (int): Playtime on the map in seconds
         created (datetime): Datetime map was added
+        oneliner (str): Oneliner message for the map
         tags (RelatedManager): Manager for Tag objects associated with the map
     """
     name = models.CharField(max_length=255)
@@ -65,6 +66,7 @@ class Map(models.Model):
     races = models.IntegerField(default=0)
     playtime = models.BigIntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
+    oneliner = models.CharField(max_length=255, blank=True)
     tags = models.ManyToManyField(Tag)
 
     def __unicode__(self):
@@ -166,7 +168,6 @@ class RaceHistory(models.Model):
         points (int): Points assigned to the record at the time of creation
         playtime (int): Player's cumulative playtime on the map
         created (datetime): Datetime when the record was made
-        oneliner (str): Oneliner message for the map
     """
     player = models.ForeignKey(Player)
     map = models.ForeignKey(Map)
@@ -175,7 +176,6 @@ class RaceHistory(models.Model):
     points = models.IntegerField(default=0)
     playtime = models.BigIntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
-    oneliner = models.CharField(max_length=255)
 
     def __unicode__(self):
         return 'player: {}, map: {}, time: {}'.format(self.player.simplified,
@@ -197,7 +197,6 @@ class Race(models.Model):
         points (int): Points assigned to the record at the time of creation
         playtime (int): Player's cumulative playtime on the map
         created (datetime): Datetime when the record was made
-        oneliner (str): Oneliner message for the map
     """
     player = models.ForeignKey(Player)
     map = models.ForeignKey(Map)
@@ -206,7 +205,6 @@ class Race(models.Model):
     points = models.IntegerField(default=0)
     playtime = models.BigIntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
-    oneliner = models.CharField(max_length=255)
 
     class Meta:
         unique_together = ('player', 'map')
