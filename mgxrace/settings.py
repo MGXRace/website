@@ -46,11 +46,16 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'racesow.middleware.ServerAuthenticationMiddleware'
 )
 
 ROOT_URLCONF = 'mgxrace.urls'
 
 WSGI_APPLICATION = 'mgxrace.wsgi.application'
+
+PASSWORD_HASHERS = (
+    'racesow.hashers.SHA256Hasher',
+)
 
 
 # Database
