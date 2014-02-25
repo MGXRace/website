@@ -54,18 +54,16 @@ def mapSerializer(map_):
     if timezone.is_aware( created ):
         created = timezone.localtime(created, timezone=timezone.utc)
 
-    tag_set = map_.tag_set.all()
-
     return {
         'id': map_.id,
-        'name': map.name,
-        'pk3file': map_.pk3file.url,
-        'levelshotfile': map_.levelshotfile.url,
+        'name': map_.name,
+        'pk3file': map_.pk3file.url if map_.pk3file else None,
+        'levelshotfile': map_.levelshotfile.url if map_.levelshotfile else None,
         'enabled': map_.enabled,
         'races': map_.races,
         'playtime': map_.playtime,
-        'created': created.isoformat() + 'Z'
-        'tags': [tag.name for tag in tag_set]
+        'created': created.isoformat() + 'Z',
+        'tags': [tag.name for tag in map_.tags.all()]
     }
 
 def raceSerializer(race):
@@ -97,7 +95,7 @@ def raceSerializer(race):
         'id': race.id,
         'playerId': race.player_id,
         'mapId': race.map_id,
-        'serverId': server.map_id,
+        'serverId': race.server_id,
         'time': race.time,
         'points': race.points,
         'playtime': race.playtime,

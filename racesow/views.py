@@ -1,6 +1,8 @@
 import base64
 import json
+from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, Http404
+from django.views.generic import View
 from .models import (
     Tag,
     Map,
@@ -29,14 +31,14 @@ class APIMap(View):
 
         # Load the best race
         try:
-            record = Race.objects.filter(map=map_.id).order_by('time')[0]
+            record = Race.objects.filter(map=map_).order_by('time')[0]
             record = raceSerializer(record)
         except:
             record = None
 
         # Serialize the data
         data = mapSerializer(map_)
-        data['record'] = raceSerializer(record_) if record else None
+        data['record'] = record
 
         return HttpResponse(json.dumps(data), content_type='application/json')
 
@@ -80,10 +82,10 @@ class APINick(View):
     def get(self, request, b64name):
         """Check if a player with the nickname exists."""
         if not hasattr(request, 'server'):
-            raise permissionDenied
+            raise PermissionDenied
 
         nick = base64.b64decode(b64name.encode('ascii'), '-_')
-        player = Player.objects.filter(name__iexact=nick)
+        player = Player.objects.filter(simplified__iexact=nick)
         data = json.dumps({nick: player.exists()})
         return HttpResponse(data, content_type='application/json')
 
