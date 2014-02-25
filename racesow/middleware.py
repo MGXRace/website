@@ -35,4 +35,4 @@ class ServerAuthenticationMiddleware(object):
         
 
     def process_response(self, request, response):
-        pass
+        return response
