@@ -72,3 +72,14 @@ class APIPlayer(View):
             data['record'] = None
 
         return HttpResponse(json.dumps(data), content_type='application/json')
+
+
+class APIRace(View):
+    """Server API interface for Race objects."""
+
+    def get(self, request):
+        if not hasattr(request, 'server'):
+            raise permissionDenied
+
+        #TODO
+        return HttpResponse('Feature not implemented yet!', content_type='text/plain', status=501)
