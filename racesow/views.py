@@ -74,6 +74,20 @@ class APIPlayer(View):
         return HttpResponse(json.dumps(data), content_type='application/json')
 
 
+class APINick(View):
+    """Check if a nickname is protected."""
+
+    def get(self, request, b64name):
+        """Check if a player with the nickname exists."""
+        if not hasattr(request, 'server'):
+            raise permissionDenied
+
+        nick = base64.b64decode(b64name.encode('ascii'), '-_')
+        player = Player.objects.filter(name__iexact=nick)
+        data = json.dumps({nick: player.exists()})
+        return HttpResponse(data, content_type='application/json')
+
+
 class APIRace(View):
     """Server API interface for Race objects."""
 
