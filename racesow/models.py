@@ -113,7 +113,7 @@ class PlayerHistory(models.Model):
     simplified = models.CharField(max_length=64, unique=True)
     playtime = models.BigIntegerField(default=0)
     races = models.IntegerField(default=0)
-    maps = models.IntegerField(defualt=0)
+    maps = models.IntegerField(default=0)
     points = models.IntegerField(default=0)
     skill_m = models.FloatField(default=0)
     skill_s = models.FloatField(default=1)
