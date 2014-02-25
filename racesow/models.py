@@ -60,8 +60,8 @@ class Map(models.Model):
         tags (RelatedManager): Manager for Tag objects associated with the map
     """
     name = models.CharField(max_length=255)
-    pk3file = models.FileField(upload_to='maps', **_null)
-    levelshotfile = models.FileField(upload_to='levelshots', **_null)
+    pk3file = models.FileField(upload_to='maps', blank=True)
+    levelshotfile = models.FileField(upload_to='levelshots', blank=True)
     enabled = models.BooleanField(default=True)
     races = models.IntegerField(default=0)
     playtime = models.BigIntegerField(default=0)
