@@ -1,5 +1,36 @@
 from django.utils import timezone
 
+def playerSerializer(player):
+    """
+    Formats a player object into primitive types for serializing
+
+    Outputs in the form
+    ```
+    {
+        "id": 1,
+        "admin": false,
+        "name": "^1Awesome ^4Racer",
+        "simplified": "Awesome Racer",
+        "playtime": 30,
+        "races": 10,
+        "maps": 2,
+        "points": 68,
+        "skill": 32.8,
+    }
+    ```
+    """
+    return {
+        'id': player.id,
+        'admin': player.admin,
+        'name': player.name,
+        'simplified': player.simplified,
+        'playtime': player.playtime,
+        'races': player.races,
+        'maps': player.maps,
+        'points': player.points,
+        'skill': player.skill_m
+    }
+
 def mapSerializer(map_):
     """
     Formats a map object into primitive types for serializing
