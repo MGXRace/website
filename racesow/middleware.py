@@ -21,8 +21,12 @@ class ServerAuthenticationMiddleware(object):
     def process_request(self, request):
         # Check for the query parameters
         try:
-            uTime = request.GET['uTime']
-            sid, token = request.GET['sToken'].split('.')
+            if request.method == 'GET':
+                uTime = request.GET['uTime']
+                sid, token = request.GET['sToken'].split('.')
+            else:
+                uTime = request.POST['uTime']
+                sid, token = request.POST['sToken'].split('.')
         except:
             return
 
