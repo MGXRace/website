@@ -1,5 +1,6 @@
 import base64
 import json
+from random import randrange
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
 from django.db import IntegrityError
@@ -20,6 +21,54 @@ from .serializers import (
     playerSerializer,
     raceSerializer)
 from .utils import authenticate, stripColorTokens
+
+
+class APIMapList(View):
+    """Server API interface for 'randmap' and 'maplist' calls."""
+
+    def get(self, request):
+        if not hasattr(request, 'server'):
+            raise PermissionDenied
+
+        # load the tags
+        try:
+            tags = json.loads(base64.b64decode(request.GET['tags'].encode('ascii'), '-_'))
+        except:
+            data = json.dumps({'error': 'Missing parameters'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        # load the pagination markers
+        try:
+            start = int(request.GET['start'])
+            limit = start + int(request.GET['limit'])
+        except:
+            start = 0
+            limit = 5
+
+        # Filter by the tags we got
+        flt = Q()
+        for t in tags:
+            flt = flt & Q(tags__name__iexact=t)
+
+        maps = Map.objects.filter(flt)
+
+        # Randmap call?
+        if 'rand' in request.GET:
+            count = maps.count()
+            maps = [maps[randrange(count)]]
+        else:
+            maps = maps[start:limit]
+
+        # Form the response
+        data = {
+            "count": len(maps),
+            "maps": [mapSerializer(map_) for map_ in maps]
+        }
+        return HttpResponse(json.dumps(data), content_type='application/json')
+
+    def post(self, request):
+        """Add tags to maps here!"""
+        raise Http404
 
 
 class APIMap(View):
