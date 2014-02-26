@@ -66,7 +66,7 @@ def mapSerializer(map_):
         'tags': [tag.name for tag in map_.tags.all()]
     }
 
-def raceSerializer(race):
+def raceSerializer(race, cp=True):
     """
     Formats a race object into primitive types for serializing
 
@@ -89,9 +89,7 @@ def raceSerializer(race):
     if timezone.is_aware( created ):
         created = timezone.localtime(created, timezone=timezone.utc)
 
-    cp_set = race.checkpoint_set.all()
-
-    return {
+    data = {
         'id': race.id,
         'playerId': race.player_id,
         'mapId': race.map_id,
@@ -100,8 +98,14 @@ def raceSerializer(race):
         'points': race.points,
         'playtime': race.playtime,
         'created': created.isoformat() + 'Z',
-        'checkpoints': [checkpointSerializer(cp) for cp in cp_set]
     }
+
+    if cp:
+        data['checkpoints'] = [checkpointSerializer(cp) for cp in cp_set]
+        cp_set = race.checkpoint_set.all()
+
+    return data
+
 
 
 def checkpointSerializer(checkpoint):

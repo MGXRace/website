@@ -211,8 +211,21 @@ class APIRace(View):
         if not hasattr(request, 'server'):
             raise permissionDenied
 
-        #TODO
-        return HttpResponse('Feature not implemented yet!', content_type='text/plain', status=501)
+        try:
+            mapname = base64.b64decode(request.GET['map'].encode('ascii'), '-_')
+            limit = int(request.GET['limit'])
+        except:
+            data = json.dumps({'error': 'Missing parameters'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        races = Race.objects.filter(map__name=mapname).order_by('time')[:limit]
+        data = {
+            "map": mapname,
+            "count": len(races),
+            "races": [raceSerializer(race, cp=False) for race in races]
+        }
+
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
     def post(self, request):
         if not hasattr(request, 'server'):
