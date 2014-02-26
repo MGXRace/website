@@ -47,6 +47,30 @@ class APIMap(View):
 
         return HttpResponse(json.dumps(data), content_type='application/json')
 
+    def post(self, request, b64name):
+        # Authenticate the request
+        if not hasattr(request, 'server'):
+            raise PermissionDenied
+
+        mapname = base64.b64decode(b64name.encode('ascii'), '-_')
+        try:
+            playtime = int(request.POST['playTime'])
+            races = int(request.POST['races'])
+        except:
+            data = json.dumps({'error': 'Missing parameters'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        try:
+            map_ = Map.objects.get(name=mapname)
+        except:
+            data = json.dumps({'error': 'Matching map not found'})
+            return HttpResponse(data, content_type='application/json', status=404)
+
+        map_.races += races
+        map_.playtime += playtime
+        map_.save()
+        return HttpResponse('', content_type='text/plain')
+
 
 class APIPlayer(View):
     """Server API interface for Player objects."""
