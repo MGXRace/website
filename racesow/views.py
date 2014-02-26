@@ -88,10 +88,46 @@ class APIPlayer(View):
             raise PermissionDenied
 
         username = base64.b64decode(b64name.encode('ascii'), '-_')
+        # cToken means we are registering a player
         if 'cToken' in request.POST:
             return self.create_player(request, username)
 
-        return HttpResponse('Feature not implemented yet!', content_type='text/plain', status=501)
+        # Get the passed parameters
+        try:
+            mid = request.POST['mid'].encode('ascii')
+            playtime = int(request.POST['playTime'])
+            races = int(request.POST['races'])
+        except:
+            data = json.dumps({'error': 'Missing parameters for user'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        try:
+            player = Player.objects.get(user__username__iexact=username)
+            race, created = Race.objects.get_or_create(player=player, map_id=mid)
+        except Exception as e:
+            print e
+            data = json.dumps({'error': 'Could not make race for user/map combination'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        player.playtime += playtime
+        player.races += races
+        player.save()
+
+        race.playtime += playtime
+        race.last_played = timezone.now()
+        race.save()
+
+        raceh = RaceHistory.objects.create(
+            player_id=player.id,
+            map_id=mid,
+            server=race.server,
+            time=race.time,
+            points=race.points,
+            playtime=race.playtime,
+            created = race.created,
+            last_played = race.last_played)
+
+        return HttpResponse('', content_type='text/plain')
 
     def create_player(self, request, username):
         """
