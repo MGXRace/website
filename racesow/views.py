@@ -1,20 +1,25 @@
 import base64
 import json
+from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
+from django.db import IntegrityError
+from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.views.generic import View
+from django.utils import timezone
 from .models import (
     Tag,
     Map,
     Server,
     Race,
+    RaceHistory,
     Checkpoint,
     Player)
 from .serializers import (
     mapSerializer,
     playerSerializer,
     raceSerializer)
-from .utils import authenticate
+from .utils import authenticate, stripColorTokens
 
 
 class APIMap(View):
@@ -57,7 +62,7 @@ class APIPlayer(View):
         # Authenticate client signature
         try:
             username = base64.b64decode(b64name.encode('ascii'), '-_')
-            player = Player.objects.get(user__username=username)
+            player = Player.objects.get(user__username__iexact=username)
             algo, salt, hash_ = player.user.password.split('$', 3)
             assert authenticate(request.GET['uTime'], hash_, request.GET['cToken'])
         except:
@@ -73,6 +78,55 @@ class APIPlayer(View):
         except:
             data['record'] = None
 
+        return HttpResponse(json.dumps(data), content_type='application/json')
+
+    def post(self, request, b64name):
+        """
+        Update player info or create a player
+        """
+        if not hasattr(request, 'server'):
+            raise PermissionDenied
+
+        username = base64.b64decode(b64name.encode('ascii'), '-_')
+        if 'cToken' in request.POST:
+            return self.create_player(request, username)
+
+        return HttpResponse('Feature not implemented yet!', content_type='text/plain', status=501)
+
+    def create_player(self, request, username):
+        """
+        Create a user and player
+        """
+        # Get the passed parameters
+        try:
+            nick = base64.b64decode(request.POST['nick'].encode('ascii'), '-_')
+            pass_ = request.POST['cToken']
+            simplified = stripColorTokens(nick)
+        except:
+            data = json.dumps({'error': 'Missing parameters for user'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        # Check if the user already exists
+        if User.objects.filter(username__iexact=username).exists():
+            data = json.dumps({'error': 'User already exists with this name or email'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        # Check if the player already exists
+        if Player.objects.filter(simplified__iexact=simplified).exists():
+            data = json.dumps({'error': 'Player already exists with this nickname'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        # Make the user
+        user = User.objects.create_user(username)
+        user.password = u'sha256$$' + pass_
+        user.save()
+        
+        # Make the player
+        player = Player.objects.create(user=user, name=nick, simplified=simplified)
+
+        # Form the response
+        data = playerSerializer(player)
+        data['record'] = None
         return HttpResponse(json.dumps(data), content_type='application/json')
 
 
@@ -99,3 +153,66 @@ class APIRace(View):
 
         #TODO
         return HttpResponse('Feature not implemented yet!', content_type='text/plain', status=501)
+
+    def post(self, request):
+        if not hasattr(request, 'server'):
+            raise permissionDenied
+
+        try:
+            pid = request.POST['pid']
+            mid = request.POST['mid']
+            time = request.POST['time']
+            checkpoints = json.loads(request.POST['checkpoints'])
+        except Exception as e:
+            print e
+            data = json.dumps({'error': 'Missing parameters for user'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        try:
+            player = Player.objects.get(id=pid)
+            map_ = Map.objects.get(id=mid)
+        except:
+            raise Http404
+
+        # No checks that the race is faster
+        # That should be done on the gameserver
+        race, created = Race.objects.get_or_create(
+            player_id=pid,
+            map_id=mid)
+        race.server = request.server
+        race.time = time
+        race.created = timezone.now()
+        race.last_played = timezone.now()
+        race.save()
+
+        raceh = RaceHistory.objects.create(
+            player_id=pid,
+            map_id=mid,
+            server=request.server,
+            time=time,
+            points=race.points,
+            playtime=race.playtime,
+            created = race.created,
+            last_played = race.last_played)
+
+        # Update race counts
+        player.races += 1
+        map_.races += 1
+        request.server.races += 1
+        player.save()
+        map_.save()
+        request.server.save()
+
+        # Delete old checkpoints
+        # Since the server will always send all checkpoints, we might can use
+        # update_or_create instead of delete/bulk_create
+        if not created:
+            Checkpoint.objects.filter(race=race).delete()
+
+        # Make new checkpoints
+        Checkpoint.objects.bulk_create([
+            Checkpoint(race_id=race.id, number=i, time=t) for i, t in enumerate(checkpoints)
+        ])
+
+        data = raceSerializer(race)
+        return HttpResponse(json.dumps(data), content_type='application/json')

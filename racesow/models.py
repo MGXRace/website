@@ -168,6 +168,7 @@ class RaceHistory(models.Model):
         points (int): Points assigned to the record at the time of creation
         playtime (int): Player's cumulative playtime on the map
         created (datetime): Datetime when the record was made
+        last_played (datetime): Datetime when the playtime stats were updated
     """
     player = models.ForeignKey(Player)
     map = models.ForeignKey(Map)
@@ -176,6 +177,7 @@ class RaceHistory(models.Model):
     points = models.IntegerField(default=0)
     playtime = models.BigIntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
+    last_played = models.DateTimeField(default=timezone.now)
 
     def __unicode__(self):
         return 'player: {}, map: {}, time: {}'.format(self.player.simplified,
@@ -197,6 +199,7 @@ class Race(models.Model):
         points (int): Points assigned to the record at the time of creation
         playtime (int): Player's cumulative playtime on the map
         created (datetime): Datetime when the record was made
+        last_played (datetime): Datetime when the playtime stats were updated
     """
     player = models.ForeignKey(Player)
     map = models.ForeignKey(Map)
@@ -205,6 +208,7 @@ class Race(models.Model):
     points = models.IntegerField(default=0)
     playtime = models.BigIntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
+    last_played = models.DateTimeField(default=timezone.now)
 
     class Meta:
         unique_together = ('player', 'map')
