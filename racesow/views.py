@@ -195,14 +195,6 @@ class APIRace(View):
             created = race.created,
             last_played = race.last_played)
 
-        # Update race counts
-        player.races += 1
-        map_.races += 1
-        request.server.races += 1
-        player.save()
-        map_.save()
-        request.server.save()
-
         # Delete old checkpoints
         # Since the server will always send all checkpoints, we might can use
         # update_or_create instead of delete/bulk_create
