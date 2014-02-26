@@ -103,6 +103,8 @@ def raceSerializer(race, cp=True):
     if cp:
         data['checkpoints'] = [checkpointSerializer(cp) for cp in cp_set]
         cp_set = race.checkpoint_set.all()
+    else:
+        data['playerName'] = race.player.name
 
     return data
 
