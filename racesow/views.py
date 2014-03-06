@@ -3,7 +3,7 @@ import json
 from random import randrange
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
-from django.db import IntegrityError
+from django.db import IntegrityError, DataError
 from django.db.models import Q
 from django.http import HttpResponse, Http404
 from django.views.generic import View
@@ -32,6 +32,7 @@ class APIMapList(View):
 
         # load the tags
         try:
+            pattern = base64.b64decode(request.GET['pattern'].encode('ascii'), '-_')
             tags = json.loads(base64.b64decode(request.GET['tags'].encode('ascii'), '-_'))
         except:
             data = json.dumps({'error': 'Missing parameters'})
@@ -43,10 +44,10 @@ class APIMapList(View):
             limit = start + int(request.GET['limit'])
         except:
             start = 0
-            limit = 5
+            limit = 20
 
         # Filter by the tags we got
-        flt = Q()
+        flt = Q(name__regex=pattern)
         for t in tags:
             flt = flt & Q(tags__name__iexact=t)
 
@@ -55,16 +56,25 @@ class APIMapList(View):
         # Randmap call?
         if 'rand' in request.GET:
             count = maps.count()
-            maps = [maps[randrange(count)]]
+            if count:
+                maps = [maps[randrange(count)]]
+            else:
+                maps = tuple()
         else:
             maps = maps[start:limit]
 
-        # Form the response
-        data = {
-            "count": len(maps),
-            "maps": [mapSerializer(map_) for map_ in maps]
-        }
-        return HttpResponse(json.dumps(data), content_type='application/json')
+        try:
+            # Form the response
+            data = {
+                "start": start,
+                "count": len(maps),
+                "maps": [mapSerializer(map_) for map_ in maps]
+            }
+            status = 200
+        except DataError:
+            data = {"error": "Invalid regular expression"}
+            status = 400
+        return HttpResponse(json.dumps(data), content_type='application/json', status=status)
 
     def post(self, request):
         """Add tags to maps here!"""
@@ -148,7 +158,9 @@ class APIPlayer(View):
         try:
             race = Race.objects.get(player=player, map_id=request.GET['mid'])
             data['record'] = raceSerializer(race)
+            print 'record'
         except:
+            print 'no record'
             data['record'] = None
 
         return HttpResponse(json.dumps(data), content_type='application/json')
@@ -209,6 +221,7 @@ class APIPlayer(View):
         # Get the passed parameters
         try:
             nick = base64.b64decode(request.POST['nick'].encode('ascii'), '-_')
+            email = base64.b64decode(request.POST['email'].encode('ascii'), '-_')
             pass_ = request.POST['cToken']
             simplified = stripColorTokens(nick)
         except:
@@ -216,7 +229,7 @@ class APIPlayer(View):
             return HttpResponse(data, content_type='application/json', status=400)
 
         # Check if the user already exists
-        if User.objects.filter(username__iexact=username).exists():
+        if User.objects.filter(Q(username__iexact=username) | Q(email__iexact=email)).exists():
             data = json.dumps({'error': 'User already exists with this name or email'})
             return HttpResponse(data, content_type='application/json', status=400)
 
@@ -226,7 +239,7 @@ class APIPlayer(View):
             return HttpResponse(data, content_type='application/json', status=400)
 
         # Make the user
-        user = User.objects.create_user(username)
+        user = User.objects.create_user(username, email)
         user.password = u'sha256$$' + pass_
         user.save()
         
