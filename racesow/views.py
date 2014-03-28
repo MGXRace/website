@@ -95,7 +95,8 @@ class APIMap(View):
 
         # Load the best race
         try:
-            record = Race.objects.filter(map=map_).order_by('time')[0]
+            record = Race.objects.filter(map=map_, time__isnull=False).\
+                                  order_by('time')[0]
             record = raceSerializer(record)
         except:
             record = None
