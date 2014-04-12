@@ -21,6 +21,7 @@ def playerSerializer(player):
     """
     return {
         'id': player.id,
+        'username': player.user.username if player.user else None,
         'admin': player.admin,
         'name': player.name,
         'simplified': player.simplified,
@@ -61,6 +62,7 @@ def mapSerializer(map_):
         'levelshotfile': map_.levelshotfile.url if map_.levelshotfile else None,
         'enabled': map_.enabled,
         'races': map_.races,
+        'oneliner': map_.oneliner,
         'playtime': map_.playtime,
         'created': created.isoformat() + 'Z',
         'tags': [tag.name for tag in map_.tags.all()]

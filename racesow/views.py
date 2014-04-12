@@ -116,6 +116,7 @@ class APIMap(View):
         try:
             playtime = int(request.POST['playTime'])
             races = int(request.POST['races'])
+            tags = json.loads(base64.b64decode(request.POST['tags'].encode('ascii'), '-_'))
         except:
             data = json.dumps({'error': 'Missing parameters'})
             return HttpResponse(data, content_type='application/json', status=400)
@@ -125,6 +126,15 @@ class APIMap(View):
         except:
             data = json.dumps({'error': 'Matching map not found'})
             return HttpResponse(data, content_type='application/json', status=404)
+
+        for tagname in tags:
+            if tagname.startswith('-'):
+                tagname = tagname[1:]
+                tag, created = Tag.objects.get_or_create(name=tagname)
+                map_.tags.remove(tag)
+            else:
+                tag, created = Tag.objects.get_or_create(name=tagname)
+                map_.tags.add(tag)
 
         map_.races += races
         map_.playtime += playtime
@@ -197,6 +207,8 @@ class APIPlayer(View):
 
         player.playtime += playtime
         player.races += races
+        if created:
+            player.maps += 1
         player.save()
 
         race.playtime += playtime
@@ -236,7 +248,7 @@ class APIPlayer(View):
 
         # Check if the player already exists
         if Player.objects.filter(simplified__iexact=simplified).exists():
-            data = json.dumps({'error': 'Player already exists with this nickname'})
+            data = json.dumps({'error': 'Player already exists with nickname: {}'.format(simplified)})
             return HttpResponse(data, content_type='application/json', status=400)
 
         # Make the user
@@ -281,9 +293,16 @@ class APIRace(View):
             data = json.dumps({'error': 'Missing parameters'})
             return HttpResponse(data, content_type='application/json', status=400)
 
-        races = Race.objects.filter(map__name=mapname).order_by('time')[:limit]
+        try:
+            map_ = Map.objects.get(name=mapname)
+        except:
+            data = json.dumps({'error': 'No matching map found'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        races = Race.objects.filter(map=map_).order_by('time')[:limit]
         data = {
             "map": mapname,
+            "oneliner": map_.oneliner,
             "count": len(races),
             "races": [raceSerializer(race, cp=False) for race in races]
         }
@@ -320,6 +339,10 @@ class APIRace(View):
         race.created = timezone.now()
         race.last_played = timezone.now()
         race.save()
+
+        if created:
+            player.maps += 1
+            player.save()
 
         raceh = RaceHistory.objects.create(
             player_id=pid,
