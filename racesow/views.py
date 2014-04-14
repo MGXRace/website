@@ -167,11 +167,9 @@ class APIPlayer(View):
 
         # Attach record run if requested
         try:
-            race = Race.objects.get(player=player, map_id=request.GET['mid'])
+            race = Race.objects.get(player=player, map_id=request.GET['mid'], time__isnull=False)
             data['record'] = raceSerializer(race)
-            print 'record'
         except:
-            print 'no record'
             data['record'] = None
 
         return HttpResponse(json.dumps(data), content_type='application/json')
@@ -190,7 +188,7 @@ class APIPlayer(View):
 
         # Get the passed parameters
         try:
-            mid = request.POST['mid'].encode('ascii')
+            mid = int(request.POST['mid'])
             playtime = int(request.POST['playTime'])
             races = int(request.POST['races'])
         except:
@@ -314,9 +312,9 @@ class APIRace(View):
             raise permissionDenied
 
         try:
-            pid = request.POST['pid']
-            mid = request.POST['mid']
-            time = request.POST['time']
+            pid = int(request.POST['pid'])
+            mid = int(request.POST['mid'])
+            time = int(request.POST['time'])
             checkpoints = json.loads(request.POST['checkpoints'])
         except Exception as e:
             print e

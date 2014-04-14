@@ -173,7 +173,7 @@ class RaceHistory(models.Model):
     player = models.ForeignKey(Player)
     map = models.ForeignKey(Map)
     server = models.ForeignKey(Server, on_delete=models.SET_NULL, **_null)
-    time = models.IntegerField(default=0)
+    time = models.IntegerField(**_null)
     points = models.IntegerField(default=0)
     playtime = models.BigIntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
