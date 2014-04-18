@@ -82,7 +82,7 @@ def raceSerializer(race, cp=True):
         "time": 30295,
         "points": 40,
         "playtime": 129841,
-        "created": "YYYY-MM-DDTHH:MM:SSZ"
+        "created": "YYYY-MM-DD"
         "checkpoints": [1243, 3428945, 0, 0, 18934255]
     }
     ```
@@ -99,7 +99,7 @@ def raceSerializer(race, cp=True):
         'time': race.time,
         'points': race.points,
         'playtime': race.playtime,
-        'created': created.isoformat() + 'Z',
+        'created': created.strftime("%Y-%m-%d"),
     }
 
     if cp:
