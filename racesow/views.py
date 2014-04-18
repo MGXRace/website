@@ -297,7 +297,7 @@ class APIRace(View):
             data = json.dumps({'error': 'No matching map found'})
             return HttpResponse(data, content_type='application/json', status=400)
 
-        races = Race.objects.filter(map=map_).order_by('time')[:limit]
+        races = Race.objects.filter(map=map_, time__isnull=False).order_by('time')[:limit]
         data = {
             "map": mapname,
             "oneliner": map_.oneliner,
