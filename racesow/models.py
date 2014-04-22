@@ -19,7 +19,7 @@ class Server(models.Model):
     """Racesow Server Model
 
     Model Fields:
-        user (User): User who owns/operates the server
+        user (Player): Player who owns/operates the server
         auth_key (str): Server authentication key for generating api tokens
         address (str): The server address in the form "(ip|domain):port"
         name (str): Name of the server (its sv_hostname setting)
@@ -29,8 +29,7 @@ class Server(models.Model):
         created (datetime): Date/time the server was created
         last_seen (datetime): Date/time the server last phoned home
     """
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, **_null)
+    user = models.ForeignKey('Player', on_delete=models.SET_NULL, **_null)
     auth_key = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
@@ -77,11 +76,11 @@ class MapRating(models.Model):
     """Racesow Map Rating Model
 
     Model Fields:
-        user (User): User who set the rating
+        user (Player): Player who set the rating
         map (Map): Map rated
         rating (int): Rating value given
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL)
+    user = models.ForeignKey('Player')
     map = models.ForeignKey(Map)
     rating = models.IntegerField()
 
@@ -97,26 +96,19 @@ class PlayerHistory(models.Model):
     """Racesow Player History Model
 
     Model Fields:
-        user (User): User associated with the player
+        username (str): Warsow.net username associated with the player
         name (str): racesow username with colorcodes
         simplified (str): racesow username without colorcodes
         playtime (int): player's ingame playtime in seconds
         races (int): number of races the player has finished
         maps (int): number of maps the player has finished a race on
-        points (int): points the player has
-        skill_m (float): player's skill rating (mu)
-        skill_s (float): uncertainty in player's skill rating (sigma)
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, unique=True,
-                             on_delete=models.SET_NULL, **_null)
+    username = models.CharField(max_length=64)
     name = models.CharField(max_length=64)
     simplified = models.CharField(max_length=64, unique=True)
     playtime = models.BigIntegerField(default=0)
     races = models.IntegerField(default=0)
     maps = models.IntegerField(default=0)
-    points = models.IntegerField(default=0)
-    skill_m = models.FloatField(default=0)
-    skill_s = models.FloatField(default=1)
 
     def __unicode__(self):
         if self.user:
@@ -128,33 +120,25 @@ class Player(models.Model):
     """Racesow Player Model
 
     Model Fields:
-        user (User): User associated with the player
+        username (str): Warsow.net username associated with the player
         admin (bool): True if the player has ingame admin privleges
         name (str): racesow username with colorcodes
         simplified (str): racesow username without colorcodes
         playtime (int): player's ingame playtime in seconds
         races (int): number of races the player has finished
         maps (int): number of maps the player has completed a race on
-        points (int): points the player has
-        skill_m (float): player's skill rating (mu)
-        skill_s (float): uncertainty in player's skill rating (sigma)
     """
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, unique=True,
-                             on_delete=models.SET_NULL, **_null)
+    username = models.CharField(max_length=64, unique=True)
     admin = models.BooleanField(default=False)
     name = models.CharField(max_length=64)
     simplified = models.CharField(max_length=64, unique=True)
     playtime = models.BigIntegerField(default=0)
     races = models.IntegerField(default=0)
     maps = models.IntegerField(default=0)
-    points = models.IntegerField(default=0)
-    skill_m = models.FloatField(default=0)
-    skill_s = models.FloatField(default=1)
 
     def __unicode__(self):
-        if self.user:
-            return '<Player user:{}>'.format(self.user.get_username())
-        return '<Player name:{}>'.format(self.simplified)
+        return '<Player user:{}, nick:{}>'.format(self.username,
+                                                  self.simplified)
 
 
 class RaceHistory(models.Model):
@@ -165,7 +149,6 @@ class RaceHistory(models.Model):
         map (Map): Map the race was performed on
         server (Server): Server the race was performed on
         time (int): Time to complete the race in milliseconds
-        points (int): Points assigned to the record at the time of creation
         playtime (int): Player's cumulative playtime on the map
         created (datetime): Datetime when the record was made
         last_played (datetime): Datetime when the playtime stats were updated
@@ -174,7 +157,6 @@ class RaceHistory(models.Model):
     map = models.ForeignKey(Map)
     server = models.ForeignKey(Server, on_delete=models.SET_NULL, **_null)
     time = models.IntegerField(**_null)
-    points = models.IntegerField(default=0)
     playtime = models.BigIntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
     last_played = models.DateTimeField(default=timezone.now)
@@ -196,7 +178,6 @@ class Race(models.Model):
         map (Map): Map the race was performed on
         server (Server): Server the race was performed on
         time (int): Time to complete the race in milliseconds
-        points (int): Points assigned to the record at the time of creation
         playtime (int): Player's cumulative playtime on the map
         created (datetime): Datetime when the record was made
         last_played (datetime): Datetime when the playtime stats were updated
@@ -205,7 +186,6 @@ class Race(models.Model):
     map = models.ForeignKey(Map)
     server = models.ForeignKey(Server, on_delete=models.SET_NULL, **_null)
     time = models.IntegerField(**_null)
-    points = models.IntegerField(default=0)
     playtime = models.BigIntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
     last_played = models.DateTimeField(default=timezone.now)
