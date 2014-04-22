@@ -36,7 +36,8 @@ class APIRace(View):
 
         races = PlayerMap.objects.filter(map=map_,
                                          time__isnull=False,
-                                         player__isnull=False)\
+                                         player__isnull=False,
+                                         prejumped='false')\
                                  .order_by('time')[:limit]
         data = {
             "map": mapname,
