@@ -1,3 +1,8 @@
 from django.contrib import admin
+from .models import Gameserver, Map, Player, PlayerMap, Checkpoint
 
-# Register your models here.
+admin.site.register(Gameserver)
+admin.site.register(Map)
+admin.site.register(Player)
+admin.site.register(PlayerMap)
+admin.site.register(Checkpoint)
