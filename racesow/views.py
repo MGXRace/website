@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 from random import randrange
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
@@ -21,6 +22,8 @@ from .serializers import (
     playerSerializer,
     raceSerializer)
 from .utils import authenticate, stripColorTokens
+
+_playerre = re.compile(r'player($|\(\d*\))', flags=re.IGNORECASE)
 
 
 def get_record(flt):
@@ -177,6 +180,9 @@ class APIPlayer(View):
             username = base64.b64decode(b64name.encode('ascii'), '-_')
             player, created = Player.objects.get_or_create(username=username)
             if created:
+                if _playerre.match(username):
+                    raise Http404
+
                 player.name = username
                 player.simplified = username
                 player.save()
@@ -255,13 +261,44 @@ class APINick(View):
         data = json.dumps({nick: player.exists()})
         return HttpResponse(data, content_type='application/json')
 
+    def post(self, request, b64name):
+        """Update a player's protected nickname."""
+        if not hasattr(request, 'server'):
+            raise PermissionDenied
+
+        try:
+            username = base64.b64decode(b64name.encode('ascii'), '-_')
+            player = Player.objects.get(username=username)
+        except:
+            raise Http404
+
+        try:
+            nickname = request.POST['nick']
+            if _playerre.match(nickname):
+                data = {'error': 'Invalid nickname {}'.format(nickname)}
+                status = 400
+
+            else:
+                player.name = request.POST['nick']
+                player.simplified = stripColorTokens( request.POST['nick'] )
+                player.save()
+                data = {player.name: True}
+                status=200
+
+        except IntegrityError:
+            data = {'error': 'Invalid nickname {}'.format(nickname)}
+            status = 400
+
+        data = json.dumps(data)
+        return HttpResponse(data, content_type='application/json', status=status)
+
 
 class APIRace(View):
     """Server API interface for Race objects."""
 
     def get(self, request):
         if not hasattr(request, 'server'):
-            raise permissionDenied
+            raise PermissionDenied
 
         try:
             mapname = base64.b64decode(request.GET['map'].encode('ascii'), '-_')
@@ -294,7 +331,7 @@ class APIRace(View):
 
     def post(self, request):
         if not hasattr(request, 'server'):
-            raise permissionDenied
+            raise PermissionDenied
 
         try:
             pid = int(request.POST['pid'])
