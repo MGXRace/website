@@ -1,5 +1,11 @@
 *.py[cod]
 
+# South migrations
+*/migrations
+
+# Test database
+db.sqlite3
+
 # C extensions
 *.so
 
