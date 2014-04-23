@@ -21,15 +21,13 @@ def playerSerializer(player):
     """
     return {
         'id': player.id,
-        'username': player.user.username if player.user else None,
+        'username': player.username,
         'admin': player.admin,
         'name': player.name,
         'simplified': player.simplified,
         'playtime': player.playtime,
         'races': player.races,
-        'maps': player.maps,
-        'points': player.points,
-        'skill': player.skill_m
+        'maps': player.maps
     }
 
 def mapSerializer(map_):
@@ -68,7 +66,8 @@ def mapSerializer(map_):
         'tags': [tag.name for tag in map_.tags.all()]
     }
 
-def raceSerializer(race, cp=True):
+
+def raceSerializer(race):
     """
     Formats a race object into primitive types for serializing
 
@@ -80,7 +79,6 @@ def raceSerializer(race, cp=True):
         "mapId": 7,
         "serverId": null,
         "time": 30295,
-        "points": 40,
         "playtime": 129841,
         "created": "YYYY-MM-DD"
         "checkpoints": [1243, 3428945, 0, 0, 18934255]
@@ -91,25 +89,18 @@ def raceSerializer(race, cp=True):
     if timezone.is_aware( created ):
         created = timezone.localtime(created, timezone=timezone.utc)
 
-    data = {
+    cp_set = race.checkpoint_set.all()
+
+    return {
         'id': race.id,
         'playerId': race.player_id,
         'mapId': race.map_id,
         'serverId': race.server_id,
         'time': race.time,
-        'points': race.points,
         'playtime': race.playtime,
         'created': created.strftime("%Y-%m-%d"),
+        'checkpoints': [checkpointSerializer(cp) for cp in cp_set]
     }
-
-    if cp:
-        cp_set = race.checkpoint_set.all()
-        data['checkpoints'] = [checkpointSerializer(cp) for cp in cp_set]
-    else:
-        data['playerName'] = race.player.name
-
-    return data
-
 
 
 def checkpointSerializer(checkpoint):

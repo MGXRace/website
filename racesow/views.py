@@ -1,5 +1,6 @@
 import base64
 import json
+import re
 from random import randrange
 from django.contrib.auth.models import User
 from django.core.exceptions import PermissionDenied
@@ -21,6 +22,26 @@ from .serializers import (
     playerSerializer,
     raceSerializer)
 from .utils import authenticate, stripColorTokens
+
+_playerre = re.compile(r'player($|\(\d*\))', flags=re.IGNORECASE)
+
+
+def get_record(flt):
+    """
+    Get the maps serialized record race
+
+    Args:
+        flt - A kwarg dict to filter race objects by
+    
+    Returns:
+        The serialized race dictionary or None if no race exists
+    """
+    try:
+        record = Race.objects.filter(time__isnull=False, **flt) \
+                             .order_by('time')[0]
+        return raceSerializer(record)
+    except:
+        return None
 
 
 class APIMapList(View):
@@ -68,12 +89,21 @@ class APIMapList(View):
             data = {
                 "start": start,
                 "count": len(maps),
-                "maps": [mapSerializer(map_) for map_ in maps]
+                "maps": []
             }
+
+            # Add serialized maps and records
+            for map_ in maps:
+                smap = mapSerializer(map_)
+                smap['record'] = get_record({'map': map_})
+                data['maps'].append(smap)
+
             status = 200
+
         except DataError:
             data = {"error": "Invalid regular expression"}
             status = 400
+
         return HttpResponse(json.dumps(data), content_type='application/json', status=status)
 
     def post(self, request):
@@ -93,17 +123,9 @@ class APIMap(View):
         mapname = base64.b64decode(b64name.encode('ascii'), '-_')
         map_, created = Map.objects.get_or_create(name=mapname)
 
-        # Load the best race
-        try:
-            record = Race.objects.filter(map=map_, time__isnull=False).\
-                                  order_by('time')[0]
-            record = raceSerializer(record)
-        except:
-            record = None
-
         # Serialize the data
         data = mapSerializer(map_)
-        data['record'] = record
+        data['record'] = get_record({'map': map_})
 
         return HttpResponse(json.dumps(data), content_type='application/json')
 
@@ -156,21 +178,24 @@ class APIPlayer(View):
         # Authenticate client signature
         try:
             username = base64.b64decode(b64name.encode('ascii'), '-_')
-            player = Player.objects.get(user__username__iexact=username)
-            algo, salt, hash_ = player.user.password.split('$', 3)
-            assert authenticate(request.GET['uTime'], hash_, request.GET['cToken'])
+            player, created = Player.objects.get_or_create(username=username)
+            if created:
+                if _playerre.match(username):
+                    raise Http404
+
+                player.name = username
+                player.simplified = username
+                player.save()
+
         except:
             raise Http404
 
         # Serialize the player
         data = playerSerializer(player)
-
-        # Attach record run if requested
-        try:
-            race = Race.objects.get(player=player, map_id=request.GET['mid'], time__isnull=False)
-            data['record'] = raceSerializer(race)
-        except:
-            data['record'] = None
+        data['record'] = get_record({
+            'player': player,
+            'map_id': request.GET['mid']
+        })
 
         return HttpResponse(json.dumps(data), content_type='application/json')
 
@@ -182,9 +207,6 @@ class APIPlayer(View):
             raise PermissionDenied
 
         username = base64.b64decode(b64name.encode('ascii'), '-_')
-        # cToken means we are registering a player
-        if 'cToken' in request.POST:
-            return self.create_player(request, username)
 
         # Get the passed parameters
         try:
@@ -196,7 +218,7 @@ class APIPlayer(View):
             return HttpResponse(data, content_type='application/json', status=400)
 
         try:
-            player = Player.objects.get(user__username__iexact=username)
+            player = Player.objects.get(username=username)
             race, created = Race.objects.get_or_create(player=player, map_id=mid)
         except Exception as e:
             print e
@@ -225,43 +247,6 @@ class APIPlayer(View):
 
         return HttpResponse('', content_type='text/plain')
 
-    def create_player(self, request, username):
-        """
-        Create a user and player
-        """
-        # Get the passed parameters
-        try:
-            nick = base64.b64decode(request.POST['nick'].encode('ascii'), '-_')
-            email = base64.b64decode(request.POST['email'].encode('ascii'), '-_')
-            pass_ = request.POST['cToken']
-            simplified = stripColorTokens(nick)
-        except:
-            data = json.dumps({'error': 'Missing parameters for user'})
-            return HttpResponse(data, content_type='application/json', status=400)
-
-        # Check if the user already exists
-        if User.objects.filter(Q(username__iexact=username) | Q(email__iexact=email)).exists():
-            data = json.dumps({'error': 'User already exists with this name or email'})
-            return HttpResponse(data, content_type='application/json', status=400)
-
-        # Check if the player already exists
-        if Player.objects.filter(simplified__iexact=simplified).exists():
-            data = json.dumps({'error': 'Player already exists with nickname: {}'.format(simplified)})
-            return HttpResponse(data, content_type='application/json', status=400)
-
-        # Make the user
-        user = User.objects.create_user(username, email)
-        user.password = u'sha256$$' + pass_
-        user.save()
-        
-        # Make the player
-        player = Player.objects.create(user=user, name=nick, simplified=simplified)
-
-        # Form the response
-        data = playerSerializer(player)
-        data['record'] = None
-        return HttpResponse(json.dumps(data), content_type='application/json')
-
 
 class APINick(View):
     """Check if a nickname is protected."""
@@ -276,13 +261,44 @@ class APINick(View):
         data = json.dumps({nick: player.exists()})
         return HttpResponse(data, content_type='application/json')
 
+    def post(self, request, b64name):
+        """Update a player's protected nickname."""
+        if not hasattr(request, 'server'):
+            raise PermissionDenied
+
+        try:
+            username = base64.b64decode(b64name.encode('ascii'), '-_')
+            player = Player.objects.get(username=username)
+        except:
+            raise Http404
+
+        try:
+            nickname = request.POST['nick']
+            if _playerre.match(nickname):
+                data = {'error': 'Invalid nickname {}'.format(nickname)}
+                status = 400
+
+            else:
+                player.name = request.POST['nick']
+                player.simplified = stripColorTokens( request.POST['nick'] )
+                player.save()
+                data = {player.name: True}
+                status=200
+
+        except IntegrityError:
+            data = {'error': 'Invalid nickname {}'.format(nickname)}
+            status = 400
+
+        data = json.dumps(data)
+        return HttpResponse(data, content_type='application/json', status=status)
+
 
 class APIRace(View):
     """Server API interface for Race objects."""
 
     def get(self, request):
         if not hasattr(request, 'server'):
-            raise permissionDenied
+            raise PermissionDenied
 
         try:
             mapname = base64.b64decode(request.GET['map'].encode('ascii'), '-_')
@@ -302,14 +318,20 @@ class APIRace(View):
             "map": mapname,
             "oneliner": map_.oneliner,
             "count": len(races),
-            "races": [raceSerializer(race, cp=False) for race in races]
+            "races": []
         }
+
+        for race in races:
+            srace = raceSerializer(race)
+            srace['player'] = playerSerializer(race.player)
+            del srace['playerId']
+            data['races'].append(srace)
 
         return HttpResponse(json.dumps(data), content_type='application/json')
 
     def post(self, request):
         if not hasattr(request, 'server'):
-            raise permissionDenied
+            raise PermissionDenied
 
         try:
             pid = int(request.POST['pid'])
@@ -329,28 +351,28 @@ class APIRace(View):
 
         # No checks that the race is faster
         # That should be done on the gameserver
-        race, created = Race.objects.get_or_create(
-            player_id=pid,
-            map_id=mid)
-        race.server = request.server
-        race.time = time
-        race.created = timezone.now()
-        race.last_played = timezone.now()
-        race.save()
+        race, created = Race.objects.get_or_create(player_id=pid, map_id=mid)
 
         if created:
             player.maps += 1
             player.save()
 
+        # Update race history
         raceh = RaceHistory.objects.create(
             player_id=pid,
             map_id=mid,
             server=request.server,
             time=time,
-            points=race.points,
             playtime=race.playtime,
             created = race.created,
             last_played = race.last_played)
+
+        # Update the record race
+        race.server = request.server
+        race.time = time
+        race.created = timezone.now()
+        race.last_played = timezone.now()
+        race.save()
 
         # Delete old checkpoints
         # Since the server will always send all checkpoints, we might can use
