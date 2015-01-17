@@ -1,0 +1,15 @@
+{% if results.paginator.num_pages > 1 %}
+<div class="pagination">
+    <span class="step-links">
+        {% if results.has_previous %}
+            <a href="{% url next_url page=results.previous_page_number q=query order=order %}">previous</a>
+        {% endif %}
+        <span class="current">
+            Page {{ results.number }} of {{ results.paginator.num_pages }}.
+        </span>
+        {% if results.has_next %}
+            <a href="{% url next_url page=results.next_page_number q=query order=order %}">next</a>
+        {% endif %}
+    </span>
+</div>
+{% endif %}

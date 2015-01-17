@@ -36,6 +36,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'south',
     'racesowold',
     'racesow',
@@ -65,8 +66,11 @@ PASSWORD_HASHERS = (
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'racesow',
+        'USER': 'rs_django',
+        'PASS': 'MyCoolPassword',
+        'HOST': 'localhost',
     }
 }
 
@@ -89,3 +93,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.environ['HOME'] + '/static/'
+
+TEMPLATE_CONTEXT_PROCESSORS = {
+    "django.core.context_processors.request",
+    "django.contrib.auth.context_processors.auth",
+}
+
+INTERNAL_IPS = ['127.0.0.1']

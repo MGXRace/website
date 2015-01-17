@@ -1,47 +1,23 @@
 import base64
 import json
-import re
 from random import randrange
-from django.contrib.auth.models import User
+
 from django.core.exceptions import PermissionDenied
-from django.db import IntegrityError, DataError
+from django.db import DataError, IntegrityError
 from django.db.models import Q
 from django.http import HttpResponse, Http404
-from django.views.generic import View
 from django.utils import timezone
-from .models import (
-    Tag,
-    Map,
-    Server,
-    Race,
-    RaceHistory,
-    Checkpoint,
-    Player)
-from .serializers import (
-    mapSerializer,
-    playerSerializer,
-    raceSerializer)
-from .utils import authenticate, stripColorTokens
+from django.views.generic import View
 
-_playerre = re.compile(r'player($|\(\d*\))', flags=re.IGNORECASE)
+from racesow.models import Map, Tag, Player, Race, RaceHistory, Checkpoint
+from racesow.serializers import mapSerializer, playerSerializer, raceSerializer
+from racesow.services import get_record, is_default_username, player_process_playtime
+from racesow.utils import strip_color_tokens
+from racesowold.models import Map as Mapold, PlayerMap
+from racesowold.serializers import raceSerializer as raceoldSerializer, playerSerializer as playeroldSerializer
 
 
-def get_record(flt):
-    """
-    Get the maps serialized record race
-
-    Args:
-        flt - A kwarg dict to filter race objects by
-    
-    Returns:
-        The serialized race dictionary or None if no race exists
-    """
-    try:
-        record = Race.objects.filter(time__isnull=False, **flt) \
-                             .order_by('time')[0]
-        return raceSerializer(record)
-    except:
-        return None
+__author__ = 'Mark'
 
 
 class APIMapList(View):
@@ -67,12 +43,16 @@ class APIMapList(View):
             start = 0
             limit = 20
 
-        # Filter by the tags we got
-        flt = Q(name__regex=pattern) if pattern else Q()
+        # Filter by enabled maps
+        flt = Q(enabled=True)
+
+        # Filter by the name and/or tags
+        if pattern:
+            flt = flt & Q(name__regex=pattern)
         for t in tags:
             flt = flt & Q(tags__name__iexact=t)
 
-        maps = Map.objects.filter(flt)
+        maps = Map.objects.filter(flt).order_by('name')
 
         # Randmap call?
         if 'rand' in request.GET:
@@ -112,7 +92,7 @@ class APIMapList(View):
 
 
 class APIMap(View):
-    """Server API insterafce for Map objects."""
+    """Server API interface for Map objects."""
 
     def get(self, request, b64name):
         """Returns the map id and best race record if it exists"""
@@ -133,8 +113,8 @@ class APIMap(View):
         # Authenticate the request
         if not hasattr(request, 'server'):
             raise PermissionDenied
-
         mapname = base64.b64decode(b64name.encode('ascii'), '-_')
+
         try:
             playtime = int(request.POST['playTime'])
             races = int(request.POST['races'])
@@ -160,6 +140,12 @@ class APIMap(View):
 
         map_.races += races
         map_.playtime += playtime
+        try:
+            new_oneliner = str(request.POST['oneliner'])
+            if new_oneliner:
+                map_.oneliner = new_oneliner
+        except:
+            pass
         map_.save()
         return HttpResponse('', content_type='text/plain')
 
@@ -180,13 +166,12 @@ class APIPlayer(View):
             username = base64.b64decode(b64name.encode('ascii'), '-_')
             player, created = Player.objects.get_or_create(username=username)
             if created:
-                if _playerre.match(username):
+                if is_default_username(username):
                     raise Http404
 
                 player.name = username
                 player.simplified = username
                 player.save()
-
         except:
             raise Http404
 
@@ -225,25 +210,40 @@ class APIPlayer(View):
             data = json.dumps({'error': 'Could not make race for user/map combination'})
             return HttpResponse(data, content_type='application/json', status=400)
 
-        player.playtime += playtime
-        player.races += races
-        if created:
-            player.maps += 1
-        player.save()
+        try:
+            player.playtime += playtime
+            player.races += races
+            if created:
+                player.maps += 1
+            player.save()
 
-        race.playtime += playtime
-        race.last_played = timezone.now()
-        race.save()
+            race.playtime += playtime
+            race.last_played = timezone.now()
+            race.save()
 
-        raceh = RaceHistory.objects.create(
-            player_id=player.id,
-            map_id=mid,
-            server=race.server,
-            time=race.time,
-            points=race.points,
-            playtime=race.playtime,
-            created = race.created,
-            last_played = race.last_played)
+            raceh = RaceHistory.objects.create(
+                player_id=player.id,
+                map_id=mid,
+                server=race.server,
+                time=race.time,
+                points=race.points,
+                playtime=race.playtime,
+                created=race.created,
+                last_played=race.last_played)
+        except:
+            # TODO remove debug code
+            import traceback
+            traceback.print_exc()
+            data = json.dumps({'error': 'Unexpected error..'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        try:
+            # TODO schedule task with Celery
+            player_process_playtime(player, mid)
+        except:
+            print "Error in player_process_playtime({}, {})".format(player, mid)
+            import traceback
+            traceback.print_exc()
 
         return HttpResponse('', content_type='text/plain')
 
@@ -272,18 +272,18 @@ class APINick(View):
         except:
             raise Http404
 
+        nickname = request.POST['nick']
         try:
-            nickname = request.POST['nick']
-            if _playerre.match(nickname):
+            if is_default_username(nickname):
                 data = {'error': 'Invalid nickname {}'.format(nickname)}
                 status = 400
 
             else:
                 player.name = request.POST['nick']
-                player.simplified = stripColorTokens( request.POST['nick'] )
+                player.simplified = strip_color_tokens( request.POST['nick'] )
                 player.save()
                 data = {player.name: True}
-                status=200
+                status = 200
 
         except IntegrityError:
             data = {'error': 'Invalid nickname {}'.format(nickname)}
@@ -302,15 +302,23 @@ class APIRace(View):
 
         try:
             mapname = base64.b64decode(request.GET['map'].encode('ascii'), '-_')
-            limit = int(request.GET['limit'])
         except:
-            data = json.dumps({'error': 'Missing parameters'})
+            data = json.dumps({'error': 'Invalid or missing parameter <map>'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        try:
+            limit = int(request.GET['limit'])
+        except ValueError:
+            data = json.dumps({'error': '<limit> should be a number'})
+            return HttpResponse(data, content_type='application/json', status=400)
+        except:
+            data = json.dumps({'error': 'Invalid or missing parameter <limit>'})
             return HttpResponse(data, content_type='application/json', status=400)
 
         try:
             map_ = Map.objects.get(name=mapname)
         except:
-            data = json.dumps({'error': 'No matching map found'})
+            data = json.dumps({'error': 'Could not find map \'{}\''.format(mapname)})
             return HttpResponse(data, content_type='application/json', status=400)
 
         races = Race.objects.filter(map=map_, time__isnull=False).order_by('time')[:limit]
@@ -337,6 +345,7 @@ class APIRace(View):
             pid = int(request.POST['pid'])
             mid = int(request.POST['mid'])
             time = int(request.POST['time'])
+            clear_oneliner = int(request.POST['co']) == 1
             checkpoints = json.loads(request.POST['checkpoints'])
         except Exception as e:
             print e
@@ -349,8 +358,12 @@ class APIRace(View):
         except:
             raise Http404
 
-        # No checks that the race is faster
-        # That should be done on the gameserver
+        if clear_oneliner:
+            # remove old oneliner
+            map_.oneliner = ""
+            map_.save()
+
+        # No checks that the race is faster. That should be done on the gameserver
         race, created = Race.objects.get_or_create(player_id=pid, map_id=mid)
 
         if created:
@@ -364,8 +377,8 @@ class APIRace(View):
             server=request.server,
             time=time,
             playtime=race.playtime,
-            created = race.created,
-            last_played = race.last_played)
+            created=race.created,
+            last_played=race.last_played)
 
         # Update the record race
         race.server = request.server
@@ -387,3 +400,72 @@ class APIRace(View):
 
         data = raceSerializer(race)
         return HttpResponse(json.dumps(data), content_type='application/json')
+
+
+class APIRaceAll(View):
+    """Server API interface for Race objects (new and old)."""
+
+    def get(self, request):
+        if not hasattr(request, 'server'):
+            raise PermissionDenied
+
+        try:
+            mapname = base64.b64decode(request.GET['map'].encode('ascii'), '-_')
+        except:
+            data = json.dumps({'error': 'Invalid or missing parameter <map>'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        try:
+            limit = int(request.GET['limit'])
+        except ValueError:
+            data = json.dumps({'error': '<limit> should be a number'})
+            return HttpResponse(data, content_type='application/json', status=400)
+        except:
+            data = json.dumps({'error': 'Invalid or missing parameter <limit>'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        # 1.5
+        try:
+            map_ = Map.objects.get(name=mapname)
+        except:
+            data = json.dumps({'error': 'Could not find map \'{}\''.format(mapname)})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        # 1.0
+        try:
+            mapold_ = Mapold.objects.get(name=mapname)
+        except:
+            data = json.dumps({'error': 'Could not find 1.0 map \'{}\''.format(mapname)})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        # 1.5
+        races = Race.objects.filter(map=map_, time__isnull=False).order_by('time')[:limit]
+
+        # 1.0
+        oldraces = PlayerMap.objects.filter(
+            map=mapold_, time__isnull=False, player__isnull=False, prejumped='false').order_by('time')[:limit]
+
+        data = {
+            "map": mapname,
+            "oneliner": map_.oneliner,
+            "count": min(len(races) + len(oldraces), limit),
+            "races": [],
+            "oldoneliner": mapold_.oneliner,
+            "oldraces": []
+        }
+
+        for race in races:
+            srace = raceSerializer(race)
+            srace['player'] = playerSerializer(race.player)
+            del srace['playerId']
+            data['races'].append(srace)
+
+        for race in oldraces:
+            srace = raceoldSerializer(race)
+            srace['player'] = playeroldSerializer(race.player)
+            data['oldraces'].append(srace)
+
+        return HttpResponse(json.dumps(data), content_type='application/json')
+
+    def post(self, request):
+        raise Http404

@@ -1,0 +1,216 @@
+html {
+    background: #302d36;
+    /*background: radial-gradient(circle, #4a4650, #302d36) no-repeat; */
+    /*background: url(images/background.png) no-repeat fixed center center;*/
+    -webkit-background-size: cover;
+    -moz-background-size: cover;
+    -o-background-size: cover;
+    background-size: cover;
+}
+
+body, #main-menu {
+    font-family: 'Oxygen', sans-serif;
+}
+
+h2 {
+    color: #ffffff;
+}
+
+#wrapper {
+    width: 800px;
+    overflow: hidden;
+    padding: 10px;
+    position: relative;
+    left: 50px;
+}
+
+#logo {
+    margin-top: 5px;
+    margin-bottom: 10px;
+}
+
+#navigation {
+    width: auto;
+    position: relative;
+    border-bottom: 1px solid #000;
+    padding: 0;
+}
+
+#navigation ul {
+    list-style: none;
+    margin: 0 0 5px;
+    padding: 0;
+}
+
+#navigation li {
+    display: inline-block;
+    line-height: 40px;
+    height: 40px;
+    font-size: 17px;
+    font-weight: bold;
+    margin: 2px;
+}
+
+#navigation a {
+    padding-left: 8%;
+    padding-right: 8%;
+}
+
+li.-active {
+    background-color: #ff6b22;
+}
+
+li.-active a {
+    color: white;
+}
+
+#navigation-sub {
+    width: auto;
+    position: relative;
+    padding: 0;
+}
+
+#navigation-sub ul {
+    list-style: none;
+    margin: 5px 0 0;
+    padding: 0;
+}
+
+#navigation-sub li {
+    display: inline-block;
+    line-height: 30px;
+    height: 30px;
+    font-size: 15px;
+    font-weight: bold;
+    margin: 2px;
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+#content {
+    padding: 15px;
+    color: #ffffff;
+}
+
+#notice {
+    color: red;
+}
+
+/* div debug */
+/*div {
+    border: 1px solid #545454;
+}*/
+
+a, td.mapurl a {
+    /*color: #3c3;*/
+    color: #ff6b22;
+    text-decoration: none;
+}
+
+a.fill-div {
+    display: block;
+    height: 100%;
+}
+
+a:hover, td.mapurl a:hover {
+    color: #d55d22;
+}
+
+.gold {
+    color: yellow;
+}
+
+.silver {
+    color: #ddd;
+}
+
+.bronze {
+    color: #fa3;
+}
+
+table#maps td {
+}
+
+.tableheader {
+    font-weight: bold;
+}
+
+td.player, td.name {
+    text-align: left;
+    min-width: 150px;
+}
+
+td.time {
+    text-align: right;
+    padding-right: 10px;
+    min-width: 100px;
+}
+
+td.datetime {
+    text-align: right;
+    padding-right: 10px;
+    min-width: 150px;
+}
+
+td.points {
+    text-align: right;
+    padding-right: 10px;
+}
+
+table td a {
+    color: white;
+}
+
+table td a:hover {
+    color: white;
+}
+
+.weapon {
+    float: right;
+    width: 12px;
+    height: 12px;
+    margin-left: 4px;
+}
+
+#weapons {
+    margin-top: 12px;
+    margin-bottom: 8px;
+}
+
+#weapons .weapon {
+    float: left;
+    margin-left: 0;
+    margin-right: 4px;
+}
+
+.weapon.mg {
+    background-color: #999;
+}
+
+.weapon.rg {
+    background-color: #f90;
+}
+
+.weapon.gl {
+    background-color: #00f;
+}
+
+.weapon.rl {
+    background-color: #f00;
+}
+
+.weapon.pg {
+    background-color: #0f0;
+}
+
+.weapon.lg {
+    background-color: #ff0;
+}
+
+.weapon.eb {
+    background-color: #0ff;
+}
+
+form#search {
+    margin-bottom: 10px;
+}

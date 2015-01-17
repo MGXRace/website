@@ -1,0 +1,27 @@
+{% load staticfiles %}{% load tags %}<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="MGX racesow server group web interface with demos." name="description">
+    <title>{% block title %}Racesow 1.5{% endblock %}</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'racesow/style.css' %}"/>
+    <link rel="shortcut icon" href="{% static 'racesow/images/mgx_icon.png' %}">
+</head>
+<body>
+
+<div id="wrapper">{% url 'rs:home' as home %}{% url 'rs:pln' as pn %}{% url 'rs:plo' as po %}{% url 'rs:mln' as mn %}{% url 'rs:mlo' as mo %}
+    <div id="logo">{% block logo %}<a href="{{ home }}"><img src="{% static 'racesow/images/mgx_logo.png' %}" alt="MGX Race logo (made by wh1te)"/></a>{% endblock %}</div>
+    <div id="navigation">
+        <ul>
+            <li class="{% active request home %}"><a class="fill-div" href="{{ home }}">Home</a></li>
+            <li class="{% active_subpage request pn po %}"><a class="fill-div" href="{{ pn }}">Players</a></li>
+            <li class="{% active_subpage request mn mo %}"><a class="fill-div" href="{{ mn }}">Maps</a></li>
+        </ul>
+    </div>
+    {% block navigation-sub %}{% endblock %}
+    <div id="content">{% block content %}{% endblock %}</div>
+    <div id="notice">{% block notice %}{% endblock %}</div>
+</div>
+</body>
+</html>
