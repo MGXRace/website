@@ -1,7 +1,13 @@
+import datetime
+
 from django.db import models
-from django.conf import settings
 from django.utils import timezone
+
+from racesow.utils import username_with_html_colors, millis_to_str
+
+
 _null = {'blank': True, 'null': True, 'default': None}
+
 
 class Tag(models.Model):
     """Tag for describing a map
@@ -71,6 +77,13 @@ class Map(models.Model):
     def __unicode__(self):
         return self.name
 
+    def playtime_formatted(self):
+        return datetime.timedelta(seconds=int(self.playtime) / 1000)
+
+    def get_tags(self):
+        return ", ".join([x.name for x in self.tags.all()])
+    get_tags.short_description = 'Tags'
+
 
 class MapRating(models.Model):
     """Racesow Map Rating Model
@@ -135,10 +148,18 @@ class Player(models.Model):
     playtime = models.BigIntegerField(default=0)
     races = models.IntegerField(default=0)
     maps = models.IntegerField(default=0)
+    # TODO maps_with_time = models.IntegerField(default=0)  # for tracking actually finished maps
+    # TODO points = models.IntegerField(default=0)  # for tracking total points
 
     def __unicode__(self):
         return '<Player user:{}, nick:{}>'.format(self.username,
                                                   self.simplified)
+
+    def htmlname(self):
+        return username_with_html_colors(u'{}'.format(self.name))
+
+    def playtime_formatted(self):
+        return millis_to_str(int(self.playtime))
 
 
 class RaceHistory(models.Model):
@@ -148,8 +169,9 @@ class RaceHistory(models.Model):
         player (Player): Player performing the race
         map (Map): Map the race was performed on
         server (Server): Server the race was performed on
-        time (int): Time to complete the race in milliseconds
+        time (int): Time to complete the race in milliseconds (null if no time was made)
         playtime (int): Player's cumulative playtime on the map
+        points (int): Points awarded to the player who completed this race, in thousands
         created (datetime): Datetime when the record was made
         last_played (datetime): Datetime when the playtime stats were updated
     """
@@ -158,6 +180,7 @@ class RaceHistory(models.Model):
     server = models.ForeignKey(Server, on_delete=models.SET_NULL, **_null)
     time = models.IntegerField(**_null)
     playtime = models.BigIntegerField(default=0)
+    points = models.IntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
     last_played = models.DateTimeField(default=timezone.now)
 
@@ -177,8 +200,9 @@ class Race(models.Model):
         player (Player): Player performing the race
         map (Map): Map the race was performed on
         server (Server): Server the race was performed on
-        time (int): Time to complete the race in milliseconds
+        time (int): Time to complete the race in milliseconds (null if no time was made)
         playtime (int): Player's cumulative playtime on the map
+        points (int): Points awarded to the player who completed this race, in thousands
         created (datetime): Datetime when the record was made
         last_played (datetime): Datetime when the playtime stats were updated
     """
@@ -187,6 +211,7 @@ class Race(models.Model):
     server = models.ForeignKey(Server, on_delete=models.SET_NULL, **_null)
     time = models.IntegerField(**_null)
     playtime = models.BigIntegerField(default=0)
+    points = models.IntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
     last_played = models.DateTimeField(default=timezone.now)
 
@@ -196,6 +221,24 @@ class Race(models.Model):
     def __unicode__(self):
         return 'player: {}, map: {}, time: {}'.format(self.player.simplified,
                                                       self.map.name, self.time)
+
+    def time_formatted(self):
+        return millis_to_str(int(self.time))
+
+    def playtime_formatted(self):
+        # return datetime.timedelta(milliseconds=int(self.playtime))
+        return millis_to_str(int(self.playtime))
+
+    def get_points(self):
+        # transform points back to float with 3 decimals
+        return float(self.points / 1000.0)
+
+    def set_points(self, points):
+        # keeps 3 decimals by multiplying with 1000
+        self.points = int(points * 1000)
+
+    def get_date(self):
+        return self.created.strftime("%Y-%m-%d %H:%M:%S")
 
 
 class Checkpoint(models.Model):

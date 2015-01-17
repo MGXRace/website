@@ -23,15 +23,23 @@ class APIRace(View):
 
         try:
             mapname = base64.b64decode(request.GET['map'].encode('ascii'), '-_')
-            limit = int(request.GET['limit'])
         except:
-            data = json.dumps({'error': 'Missing parameters'})
+            data = json.dumps({'error': 'Invalid or missing parameter <map>'})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        try:
+            limit = int(request.GET['limit'])
+        except ValueError:
+            data = json.dumps({'error': '<limit> should be a number'})
+            return HttpResponse(data, content_type='application/json', status=400)
+        except:
+            data = json.dumps({'error': 'Invalid or missing parameter <limit>'})
             return HttpResponse(data, content_type='application/json', status=400)
 
         try:
             map_ = Map.objects.get(name=mapname)
         except:
-            data = json.dumps({'error': 'No matching map found'})
+            data = json.dumps({'error': 'Could not find map \'{}\''.format(mapname)})
             return HttpResponse(data, content_type='application/json', status=400)
 
         races = PlayerMap.objects.filter(map=map_,

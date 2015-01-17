@@ -32,7 +32,6 @@ class ServerAuthenticationMiddleware(object):
 
         # Attach server to the request
         request.server = server
-        
 
     def process_response(self, request, response):
         return response

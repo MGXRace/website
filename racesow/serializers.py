@@ -1,5 +1,6 @@
 from django.utils import timezone
 
+
 def playerSerializer(player):
     """
     Formats a player object into primitive types for serializing
@@ -30,6 +31,7 @@ def playerSerializer(player):
         'maps': player.maps
     }
 
+
 def mapSerializer(map_):
     """
     Formats a map object into primitive types for serializing
@@ -50,7 +52,7 @@ def mapSerializer(map_):
     ```
     """
     created = map_.created
-    if timezone.is_aware( created ):
+    if timezone.is_aware(created):
         created = timezone.localtime(created, timezone=timezone.utc)
 
     return {
@@ -80,13 +82,14 @@ def raceSerializer(race):
         "serverId": null,
         "time": 30295,
         "playtime": 129841,
+        "points": 30.59,
         "created": "YYYY-MM-DD"
         "checkpoints": [1243, 3428945, 0, 0, 18934255]
     }
     ```
     """
     created = race.created
-    if timezone.is_aware( created ):
+    if timezone.is_aware(created):
         created = timezone.localtime(created, timezone=timezone.utc)
 
     cp_set = race.checkpoint_set.all()
@@ -98,7 +101,8 @@ def raceSerializer(race):
         'serverId': race.server_id,
         'time': race.time,
         'playtime': race.playtime,
-        'created': created.strftime("%Y-%m-%d"),
+        'points': race.get_points(),
+        'created': created.strftime("%Y-%m-%d - %H:%M:%S"),
         'checkpoints': [checkpointSerializer(cp) for cp in cp_set]
     }
 

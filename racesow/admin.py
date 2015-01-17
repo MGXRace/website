@@ -4,7 +4,14 @@ from .models import Player, RaceHistory, Race, Checkpoint
 
 admin.site.register(Tag)
 admin.site.register(Server)
-admin.site.register(Map)
+
+
+class MapAdmin(admin.ModelAdmin):
+    list_display = ('name', 'enabled', 'get_tags')
+    ordering = ('name', )
+    search_fields = ('name', )
+
+admin.site.register(Map, MapAdmin)
 admin.site.register(MapRating)
 admin.site.register(PlayerHistory)
 admin.site.register(Player)

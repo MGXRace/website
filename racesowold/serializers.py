@@ -83,8 +83,7 @@ def raceSerializer(race):
     if not created:
         created = '0000-00-00'
     elif timezone.is_aware( created ):
-        created = timezone.localtime(created, timezone=timezone.utc) \
-                          .strftime('%Y-%m-%d')
+        created = timezone.localtime(created, timezone=timezone.utc)
 
     return {
         'id': race.id,
@@ -94,5 +93,5 @@ def raceSerializer(race):
         'time': race.time,
         'points': race.points,
         'playtime': race.playtime,
-        'created': created
+        'created': created.strftime("%Y-%m-%d - %H:%M:%S")
     }

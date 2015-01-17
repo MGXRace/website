@@ -1,6 +1,10 @@
+import datetime
+
 from django.db import models
-from django.conf import settings
-from django.utils import timezone
+
+from racesow.utils import username_with_html_colors, millis_to_str, weaponstring
+
+
 _null = {'blank': True, 'null': True, 'default': None}
 
 
@@ -40,6 +44,12 @@ class Player(models.Model):
 
     def __unicode__(self):
         return '<Player name:{}>'.format(self.simplified)
+
+    def htmlname(self):
+        return username_with_html_colors(u'{}'.format(self.name))
+
+    def playtime_formatted(self):
+        return millis_to_str(int(self.playtime))
 
 
 class Map(models.Model):
@@ -82,6 +92,22 @@ class Map(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    def playtime_formatted(self):
+        return datetime.timedelta(seconds=int(self.playtime)/1000)
+
+    def htmlname(self):
+        if self.longname:
+            return username_with_html_colors(u'{}'.format(self.longname))
+        return u''
+
+    def htmlname_short(self, maxlen=32):
+        if self.longname:
+            return username_with_html_colors(u'{}'.format(self.longname)[:maxlen])
+        return u''
+
+    def get_weapons(self):
+        return weaponstring('{}'.format(self.weapons))
 
 
 class Gameserver(models.Model):
@@ -158,3 +184,16 @@ class PlayerMap(models.Model):
     def __unicode__(self):
         return 'player: {}, map: {}, time: {}'.format(self.player.simplified,
                                                       self.map.name, self.time)
+
+    def time_formatted(self):
+        return millis_to_str(int(self.time))
+
+    def playtime_formatted(self):
+        # return datetime.timedelta(milliseconds=int(self.playtime))
+        return millis_to_str(int(self.playtime))
+
+    def get_points(self):
+        return self.points
+
+    def get_date(self):
+        return self.created.strftime("%Y-%m-%d %H:%M:%S")
