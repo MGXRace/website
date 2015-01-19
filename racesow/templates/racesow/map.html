@@ -13,6 +13,7 @@
 {% block content %}
     {% if map %}
         <h3>Stats for map {{ map.name }}</h3>
+        <p>Oneliner: {{ map.oneliner }}</p>
         {% if map_other %}
             <p>Go to map in <a href="{% url mapdetails_other mapid=map_other.id %}">{% version_string version_other %}</a></p>
         {% endif %}

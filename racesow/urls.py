@@ -10,6 +10,10 @@ urlpatterns = patterns(
     '',
     url(r'^$', website.Index.as_view(), name='home'),
 
+    url(r'^test123$', website.Test.as_view(), name='test'),
+    url(r'^test1234/(?P<mapname>[-\w]+)$', website.Test2.as_view(), name='test'),
+    url(r'^test1234/(?P<mapname>[-\w]+)/(?P<oneliner>[-\w]+)$', website.Test2.as_view(), name='test'),
+
     # details of a single player (pdn = Player Details New, pdn = Player Details Old)
     url(r'^players/detail/(?P<playerid>\d+)[/]*$', website.PlayerDetails.as_view(), {'version': 'new'}, name='pdn'),
     url(r'^players/detail/(?P<playerid>\d+)/(?P<order>[-\w]+)/(?P<page>\d+)$', website.PlayerDetails.as_view(), {'version': 'new'}, name='pdn2'),

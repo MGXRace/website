@@ -73,6 +73,7 @@ class Map(models.Model):
     created = models.DateTimeField(default=timezone.now)
     oneliner = models.CharField(max_length=255, blank=True)
     tags = models.ManyToManyField(Tag)
+    points_last_processed = models.DateTimeField(default=timezone.now)
 
     def __unicode__(self):
         return self.name

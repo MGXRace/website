@@ -1,8 +1,11 @@
+import logging
+import celery
 from django.conf import settings
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import render, redirect
 from django.views.generic import View
+from racesow import tasks
 from racesow.models import Map, Race, Player
 from racesow.services import map_evaluate_points
 from racesowold.models import Map as Mapold, PlayerMap, Player as Playerold
@@ -24,6 +27,38 @@ def get_page(objects, page):
         # If page is out of range (e.g. 9999), deliver last page of results.
         objects_page = paginator.page(paginator.num_pages)
     return objects_page
+
+
+class Test(View):
+    def get(self, request):
+        l_ = logging.getLogger('django')
+        l_.info("TEST VIEW")
+        a = 3
+        b = 4
+        # c = tasks.xsum([a, b])
+        c = 0
+        celery.current_app.send_task('racesow.tasks.xsum', args=[[a, b]])
+        return HttpResponse("{} + {} = {}".format(a, b, c))
+
+class Test2(View):
+    def get(self, request, **kwargs):
+        mapname = kwargs.get('mapname', None)
+        if not mapname:
+            return HttpResponse("Need at least 1 argument for mapname")
+        new_oneliner = kwargs.get('oneliner', None)
+
+        try:
+            map_ = Map.objects.get(name=mapname)
+        except Map.DoesNotExist:
+            return HttpResponse("Map {} not found!".format(mapname))
+
+        old_oneliner = map_.oneliner
+        if new_oneliner:
+            celery.current_app.send_task('racesow.tasks.update_oneliner', args=[mapname, new_oneliner])
+            return HttpResponse("Map {} has oneliner [{}], should change to [{}] in 10 seconds!".format(
+                mapname, old_oneliner, new_oneliner))
+
+        return HttpResponse("Map {} has oneliner [{}].".format(mapname, old_oneliner))
 
 
 class Index(View):
