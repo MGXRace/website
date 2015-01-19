@@ -15,13 +15,13 @@
 //## Gray and brand colors for use across Bootstrap.
 
 $gray-base:              #fff
-// $gray-darker:            lighten($gray-base, 13.5%) // #222
-// $gray-dark:              lighten($gray-base, 20%)   // #333
-// $gray:                   lighten($gray-base, 33.5%) // #555
-// $gray-light:             lighten($gray-base, 46.7%) // #777
-// $gray-lighter:           lighten($gray-base, 93.5%) // #eee
+$gray-lighter:           darken($gray-base, 13.5%)
+$gray-light:             darken($gray-base, 20%)
+$gray:                   darken($gray-base, 33.5%)
+$gray-dark:              darken($gray-base, 46.7%)
+$gray-darker:            darken($gray-base, 93.5%)
 
-$brand-primary:         darken(#ff802a, 6.5%)
+$brand-primary:          darken(#ff802a, 6.5%)
 // $brand-success:         #5cb85c
 // $brand-info:            #5bc0de
 // $brand-warning:         #f0ad4e
@@ -35,7 +35,7 @@ $brand-primary:         darken(#ff802a, 6.5%)
 //** Background color for `<body>`.
 $body-bg:               $brand-primary
 //** Global text color on `<body>`.
-// $text-color:            $gray-dark
+$text-color:            $gray-lighter
 
 //** Global textual link color.
 $link-color: #a79eaa
@@ -137,7 +137,7 @@ $component-active-bg:       $brand-primary
 // $table-condensed-cell-padding:  5px
 
 //** Default background color used for all tables.
-// $table-bg:                      transparent
+$table-bg: #433f4b
 //** Background color used for `.table-striped`.
 $table-bg-accent:               #6B606E
 //** Background color used for `.table-hover`.
@@ -145,7 +145,7 @@ $table-bg-hover:                #89808C
 // $table-bg-active:               $table-bg-hover
 
 //** Border color for table and cell borders.
-// $table-border-color:            #ddd
+$table-border-color:            #221626
 
 
 //== Buttons
@@ -191,7 +191,7 @@ $table-bg-hover:                #89808C
 // $input-bg-disabled:              $gray-lighter
 
 //** Text color for `<input>`s
-// $input-color:                    $gray
+$input-color:                    $gray-darker
 //** `<input>` border color
 // $input-border:                   #ccc
 
@@ -420,7 +420,7 @@ $table-bg-hover:                #89808C
 
 //=== Shared nav styles
 // $nav-link-padding:                          10px 15px
-$nav-link-hover-bg:                         $brand-primary
+$nav-link-hover-bg:                         darken($brand-primary, 12.5%)
 
 // $nav-disabled-link-color:                   $gray-light
 // $nav-disabled-link-hover-color:             $gray-light

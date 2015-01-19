@@ -11,7 +11,6 @@ h1, h2, h3, h4, h5
 body
   background-color: #221626
 
-
 /******************************
  * Head styles
  *****************************/
@@ -27,8 +26,15 @@ body
     padding: 10px 0 10px 0
     background-color: #2F2831
 
-    .nav-pills li a
-      color: #fff
+    .nav-pills
+      li
+        a
+          color: #ddd
+        a.disabled
+          color: #777
+      li.active
+        a
+          color: #fff
 
 /******************************
  * Content styles
@@ -37,9 +43,18 @@ body
   padding: 10px 0 10px 0
   background-color: #3e3a46
 
-  .nav-tabs li a
-    color: #fff
+  .nav-tabs
+    li
+      a
+        color: #ddd
+    li.active
+      a
+        color: #fff
+      a:hover
+        cursor: pointer
 
+  .table a
+    color: #fff
 
 /******************************
  * Foot styles
@@ -49,3 +64,15 @@ body
   text-align: center
   padding: 10px 0
   background-color: #221626
+
+/*****************************************************************
+ * Util styles
+ ****************************************************************/
+.medal-gold
+  color: #ff0
+
+.medal-silver
+  color: #ddd
+
+.medal-bronze
+  color: #fa3

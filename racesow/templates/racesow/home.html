@@ -2,9 +2,13 @@
 
 {% block content %}
     <h1>MGX Race</h1>
-    <p>New website being constructed for racesow 1.5. This site contains statistics of a very old 1.0 database snapshot
-        and the latest 1.5 statistics. Bugreports and suggestions can be posted <a
-                href="http://www.warsow.net/forum/thread/16190">here</a>.<br>Planned features:</p>
+    <p>New website being constructed for Racesow 1.5.</p>
+    <p>This site contains statistics of a very old 1.0 database snapshot and the latest 1.5 statistics.</p>
+
+    <h4>Contact</h4>
+    <p>Bugreports and suggestions can be posted <a href="http://www.warsow.net/forum/thread/16190">here</a>.</p>
+
+    <h4>Planned features:</h4>
     <ul>
         <li>
             Showing unified racetimes per map for versions 1.5 and 1.0. This way, all the hard work done on records in
@@ -18,29 +22,31 @@
             And more..
         </li>
     </ul>
-    <div id="lastrecs">
-        <h2>Last 20 races</h2>
-        <table id="races">
-            <tr class="tableheader">
-                <td class="player">Player</td>
-                <td class="map">Map</td>
-                <td class="time">Time</td>
-                <td class="datetime">Date</td>
-            </tr>
-            {% if races %}
-                {% for race in races %}
-                    <tr>
-                        <td class="player">{{ race.player.htmlname|safe }}</td>
-                        <td class="map">{{ race.map.name }}</td>
-                        <td class="time">{{ race.time_formatted }}</td>
-                        <td class="datetime">{{ race.last_played }}</td>
-                    </tr>
-                {% endfor %}
-            {% endif %}
-        </table>
-    </div>
+
+    <h4>Last 20 races</h4>
+    <table class="table table-bordered table-striped table-hover table-condensed">
+        <tr>
+            <th>Player</th>
+            <th>Map</th>
+            <th>Time</th>
+            <th>Date</th>
+        </tr>
+        {% if races %}
+            {% for race in races %}
+                <tr>
+                    <td class="player-name">{{ race.player.htmlname|safe }}</td>
+                    <td>{{ race.map.name }}</td>
+                    <td>{{ race.time_formatted }}</td>
+                    <td>{{ race.last_played }}</td>
+                </tr>
+            {% endfor %}
+        {% endif %}
+    </table>
+
 {% endblock %}
 
 {% if debug and notice %}
-    {% block notice %}{{ notice }}{% endblock notice %}
+    {% block notice %}
+        {{ notice }}
+    {% endblock notice %}
 {% endif %}
