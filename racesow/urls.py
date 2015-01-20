@@ -1,10 +1,10 @@
 from django.conf.urls import patterns, url
 
-import racesow.views.api as api
 from racesow.views.default import NotFound
+
+import racesow.views.api as api
 import racesow.views.site as website
 import racesow.views.wmm as wmm
-
 
 urlpatterns = patterns(
     '',

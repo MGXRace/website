@@ -63,7 +63,7 @@ class NavSelectedNode(template.Node):
         for p in self.patterns:
             p_value = template.Variable(p).resolve(context)
             if path == p_value:
-                return "-active"
+                return "active"
         return ""
 
 
@@ -91,5 +91,5 @@ class NavSelectedSubNode(template.Node):
             except UnicodeDecodeError:
                 continue
             if path.startswith(p_value):
-                return "-active"
+                return "active"
         return ""

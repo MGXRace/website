@@ -33,6 +33,10 @@ nosetests.xml
 # Translations
 *.mo
 
+# JetBrains IDEs
+*.iml
+.idea/
+
 # Mr Developer
 .mr.developer.cfg
 .project

@@ -1,80 +1,106 @@
-{% extends "racesow/_base.html" %}{% load tags %}{% load humanize %}
-{% block title %}{{ block.super }} - Maps{% endblock title %}
+{% extends "racesow/_base.html" %}
+{% load tags %}
+{% load humanize %}
+
+{% block title %}
+    {{ block.super }} - Maps
+{% endblock title %}
 
 {% block navigation-sub %}
-    <div id="navigation-sub">{% url 'rs:mln' as mnew %}{% url 'rs:mlo' as mold %}
-        <ul>
-            <li class="{% active_subpage request mnew %}"><a href="{{ mnew }}">Current version</a></li>
-            <li class="{% active_subpage request mold %}"><a href="{{ mold }}">Old version (1.0)</a></li>
-        </ul>
-    </div>
+    {% url 'rs:mln' as mnew %}
+    {% url 'rs:mlo' as mold %}
+
+    <ul class="nav nav-tabs">
+        <li role="presentation" class="{% active_subpage request mnew %}"><a href="{{ mnew }}">Current version</a></li>
+        <li role="presentation" class="{% active_subpage request mold %}"><a href="{{ mold }}">Old version (1.0)</a></li>
+    </ul>
 {% endblock navigation-sub %}
 
 {% block content %}{% spaceless %}
     <h1>Maps</h1>
 
-    {% if maps %}<p>Displaying {{ maps|length }}/{{ maps.paginator.count }} maps.</p>{% endif %}
+    {% if maps %}
+        <p>Displaying {{ maps|length }} / {{ maps.paginator.count }} maps.</p>
+    {% endif %}
 
-    {% include "racesow/elements/searchbox.html" %}
+    {% include "racesow/elements/searchbox.html" with placeholder="Map" %}
 
     {% if maps %}
         {# Handle page stuff #}
-        {% with results=maps next_url=maplist %}{% include "racesow/elements/pagination.html" %}{% endwith %}
+        {% with results=maps next_url=maplist %}
+            {% include "racesow/elements/pagination.html" %}
+        {% endwith %}
 
         {# Print the version-specific maplist #}
-        <table id="maps">
+        <table class="table table-bordered table-striped table-hover table-condensed">
         {% if version == "old" %}
             {# Name  Weapons  Races-  Playtime  DL  Long name #}
-            <tr class="tableheader">
-                <td class="name">
+            <tr>
+                <th>
                     {% format_header "name" order as h_name %}
-                    <a href="{% url maplist page=1 q=query order=h_name.url %}">{{ h_name.title }}</a></td>
-                <td class="weapons">
+                    <a href="{% url maplist page=1 q=query order=h_name.url %}">{{ h_name.title }}</a>
+                </th>
+                <th>
                     {% format_header "weapons" order as h_weapons %}
-                    <a href="{% url maplist page=1 q=query order=h_weapons.url %}">{{ h_weapons.title }}</a></td>
-                <td class="points">
+                    <a href="{% url maplist page=1 q=query order=h_weapons.url %}">{{ h_weapons.title }}</a>
+                </th>
+                <th>
                     {% format_header "races" order as h_races %}
-                    <a href="{% url maplist page=1 q=query order=h_races.url %}">{{ h_races.title }}</a></td>
-                <td class="time">
+                    <a href="{% url maplist page=1 q=query order=h_races.url %}">{{ h_races.title }}</a>
+                </th>
+                <th>
                     {% format_header "playtime" order as h_playtime %}
-                    <a href="{% url maplist page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a></td>
-                <td class="url">DL</td>
-                <td class="name">
+                    <a href="{% url maplist page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a>
+                </th>
+                <th>DL</th>
+                <th>
                     {% format_header "long name" order as h_ln %}
-                    <a href="{% url maplist page=1 q=query order=h_ln.url %}">{{ h_ln.title }}</a></td>
+                    <a href="{% url maplist page=1 q=query order=h_ln.url %}">{{ h_ln.title }}</a>
+                </th>
             </tr>
             {% for map in maps %}
                 <tr>
-                <td class="name mapurl"><a href={% url 'rs:mdo' map.id %}>{{ map.name }}</a></td>
-                <td class="weapons">{{ map.get_weapons|safe }}</td>
-                <td class="points">{{ map.races }}</td>
-                <td class="time">{{ map.playtime_formatted }}</td>
-                <td class="url">pk3</td>
-                <td class="name">{{ map.htmlname_short|safe }}</td>
+                    <td>
+                        <a href={% url 'rs:mdo' map.id %}>{{ map.name }}</a>
+                    </td>
+                    <td>{{ map.get_weapons|safe }}</td>
+                    <td>{{ map.races }}</td>
+                    <td>{{ map.playtime_formatted }}</td>
+                    <td>pk3</td>
+                    <td>{{ map.htmlname_short|safe }}</td>
                 </tr>
             {% endfor %}
         {% elif version == "new" %}
             {#  Name  Races-  Playtime  DL  Tags #}
-            <tr class="tableheader">
-                <td class="name">
+            <tr>
+                <th>
                     {% format_header "name" order as h_name %}
-                    <a href="{% url maplist page=1 q=query order=h_name.url %}">{{ h_name.title }}</a></td>
-                <td class="points">
+                    <a href="{% url maplist page=1 q=query order=h_name.url %}">{{ h_name.title }}</a>
+                </th>
+                <th>
                     {% format_header "races" order as h_races %}
-                    <a href="{% url maplist page=1 q=query order=h_races.url %}">{{ h_races.title }}</a></td>
-                <td class="time">
+                    <a href="{% url maplist page=1 q=query order=h_races.url %}">{{ h_races.title }}</a>
+                </th>
+                <th>
                     {% format_header "playtime" order as h_playtime %}
-                    <a href="{% url maplist page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a></td>
-                <td class="url">DL</td>
-                <td class="name">Tags</td>
+                    <a href="{% url maplist page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a>
+                </th>
+                <th>DL</th>
+                <th>Tags</th>
             </tr>
             {% for map in maps %}
                 <tr>
-                <td class="name mapurl"><a href={% url 'rs:mdn' map.id %}>{{ map.name }}</a></td>
-                <td class="points">{{ map.races }}</td>
-                <td class="time">{{ map.playtime_formatted }}</td>
-                <td class="url">pk3</td>
-                <td class="name">{% for tag in map.tags.all %}{{ tag.name }}{% endfor %}</td>
+                    <td>
+                        <a href={% url 'rs:mdn' map.id %}>{{ map.name }}</a>
+                    </td>
+                    <td>{{ map.races }}</td>
+                    <td>{{ map.playtime_formatted }}</td>
+                    <td>pk3</td>
+                    <td>
+                        {% for tag in map.tags.all %}
+                            {{ tag.name }}
+                        {% endfor %}
+                    </td>
                 </tr>
             {% endfor %}
         {% else %}
@@ -87,5 +113,7 @@
 {% endspaceless %}{% endblock content %}
 
 {% if debug and notice %}
-    {% block notice %}{{ notice }}{% endblock notice %}
+    {% block notice %}
+        {{ notice }}
+    {% endblock notice %}
 {% endif %}

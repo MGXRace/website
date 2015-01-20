@@ -1,85 +1,111 @@
-{% extends "racesow/_base.html" %}{% load tags %}{% load humanize %}
-{% block title %}{{ block.super }} - Mapstats{% endblock title %}
+{% extends "racesow/_base.html" %}
+{% load tags %}
+{% load humanize %}
+
+{% block title %}
+    {{ block.super }} - Mapstats
+{% endblock title %}
 
 {% block navigation-sub %}
-    <div id="navigation-sub">{% url 'rs:mln' as mnew %}{% url 'rs:mlo' as mold %}
-        <ul>
-            <li class="{% active_subpage request mnew %}"><a href="{{ mnew }}">{% version_string "new" %}</a></li>
-            <li class="{% active_subpage request mold %}"><a href="{{ mold }}">{% version_string "old" %}</a></li>
-        </ul>
-    </div>
+    {% url 'rs:mln' as mnew %}
+    {% url 'rs:mlo' as mold %}
+
+    <ul class="nav nav-tabs">
+        <li role="presentation" class="{% active_subpage request mnew %}"><a href="{{ mnew }}">{% version_string "new" %}</a></li>
+        <li role="presentation" class="{% active_subpage request mold %}"><a href="{{ mold }}">{% version_string "old" %}</a></li>
+    </ul>
 {% endblock navigation-sub %}
 
 {% block content %}
     {% if map %}
         <h3>Stats for map {{ map.name }}</h3>
+
         {% if map_other %}
             <p>Go to map in <a href="{% url mapdetails_other mapid=map_other.id %}">{% version_string version_other %}</a></p>
         {% endif %}
-        {% if map.longname %}<p>{{ map.htmlname|safe }}</p>{% endif %}
+
+        {% if map.longname %}
+            <p>{{ map.htmlname|safe }}</p>
+        {% endif %}
+
         <p>Time played: {{ map.playtime_formatted }}</p>
 
         {% if races %}
-            <p>Displaying {{ races|length }}/{{ races.paginator.count }} races.</p>
+            <p>Displaying {{ races|length }} / {{ races.paginator.count }} races.</p>
 
             {# Handle page stuff #}
-            {% with results=races next_url=mapdetails %}{% include "racesow/elements/pagination_mapdetail.html" %}{% endwith %}
+            {% with results=races next_url=mapdetails %}
+                {% include "racesow/elements/pagination_mapdetail.html" %}
+            {% endwith %}
 
             {# Create table to show races for this map and version #}
-            <table id="maps">
+            <table class="table table-bordered table-striped table-hover table-condensed">
             {% if version == "old" %}
-                <tr class="tableheader">
-                    <td class="points">
+                <tr>
+                    <th>
                         {% format_header "points" order as h_points %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_points.url %}">{{ h_points.title }}</a></td>
-                    <td class="player">
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_points.url %}">{{ h_points.title }}</a>
+                    </th>
+                    <th>
                         {% format_header "player" order as h_player %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_player.url %}">{{ h_player.title }}</a></td>
-                    <td class="time">
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_player.url %}">{{ h_player.title }}</a>
+                    </th>
+                    <th>
                         {% format_header "time" order as h_time %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_time.url %}">{{ h_time.title }}</a></td>
-                    <td class="time">
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_time.url %}">{{ h_time.title }}</a>
+                    </th>
+                    <th>
                         {% format_header "onlinetime" order as h_onlinetime %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_onlinetime.url %}">{{ h_onlinetime.title }}</a></td>
-                    <td class="datetime">
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_onlinetime.url %}">{{ h_onlinetime.title }}</a>
+                    </th>
+                    <th>
                         {% format_header "date" order as h_date %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_date.url %}">{{ h_date.title }}</a></td>
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_date.url %}">{{ h_date.title }}</a>
+                    </th>
                 </tr>
                 {% for race in races %}
                     <tr>
-                        <td class="points">{{ race.get_points|floatformat:0 }}</td>
-                        <td class="player"><a
-                                href={% url 'rs:pdo' race.player.id %}>{{ race.player.htmlname|safe }}</a></td>
-                        <td class="time">{{ race.time_formatted }}</td>
-                        <td class="time">{{ race.playtime_formatted }}</td>
-                        <td class="time">{{ race.get_date }}</td>
+                        <td>{{ race.get_points|floatformat:0 }}</td>
+                        <td>
+                            <a href={% url 'rs:pdo' race.player.id %}>{{ race.player.htmlname|safe }}</a>
+                        </td>
+                        <td>{{ race.time_formatted }}</td>
+                        <td>{{ race.playtime_formatted }}</td>
+                        <td>{{ race.get_date }}</td>
                     </tr>
                 {% endfor %}
             {% elif version == "new" %}
-                <tr class="tableheader">
-                    <td class="points">
+                <tr>
+                    <th>
                         {% format_header "points" order as h_points %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_points.url %}">{{ h_points.title }}</a></td>
-                    <td class="player">
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_points.url %}">{{ h_points.title }}</a>
+                    </th>
+                    <th>
                         {% format_header "player" order as h_player %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_player.url %}">{{ h_player.title }}</a></td>
-                    <td class="time">
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_player.url %}">{{ h_player.title }}</a>
+                    </th>
+                    <th>
                         {% format_header "time" order as h_time %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_time.url %}">{{ h_time.title }}</a></td>
-                    <td class="time">
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_time.url %}">{{ h_time.title }}</a>
+                    </th>
+                    <th>
                         {% format_header "playtime" order as h_playtime %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_playtime.url %}">{{ h_playtime.title }}</a></td>
-                    <td class="datetime">
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_playtime.url %}">{{ h_playtime.title }}</a>
+                    </th>
+                    <th>
                         {% format_header "date" order as h_date %}
-                        <a href="{% url mapdetails mapid=map.id page=1 order=h_date.url %}">{{ h_date.title }}</a></td>
+                        <a href="{% url mapdetails mapid=map.id page=1 order=h_date.url %}">{{ h_date.title }}</a>
+                    </th>
                 </tr>
                 {% for race in races %}
                     <tr>
-                        <td class="points">{{ race.get_points|floatformat:0 }}</td>
-                        <td class="player"><a href={% url 'rs:pdn' race.player.id %}>{{ race.player.htmlname|safe }}</a></td>
-                        <td class="time">{{ race.time_formatted }}</td>
-                        <td class="time">{{ race.playtime_formatted }}</td>
-                        <td class="time">{{ race.get_date }}</td>
+                        <td>{{ race.get_points|floatformat:0 }}</td>
+                        <td>
+                            <a href={% url 'rs:pdn' race.player.id %}>{{ race.player.htmlname|safe }}</a>
+                        </td>
+                        <td>{{ race.time_formatted }}</td>
+                        <td>{{ race.playtime_formatted }}</td>
+                        <td>{{ race.get_date }}</td>
                     </tr>
                 {% endfor %}
             {% else %}
@@ -95,5 +121,7 @@
 {% endblock %}
 
 {% if debug and notice %}
-    {% block notice %}{{ notice }}{% endblock notice %}
+    {% block notice %}
+        {{ notice }}
+    {% endblock notice %}
 {% endif %}

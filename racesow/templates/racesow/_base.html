@@ -1,27 +1,78 @@
-{% load staticfiles %}{% load tags %}<!DOCTYPE html>
+{% load staticfiles %}
+{% load tags %}
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="MGX racesow server group web interface with demos." name="description">
     <title>{% block title %}Racesow 1.5{% endblock %}</title>
-    <link rel="stylesheet" type="text/css" href="{% static 'racesow/style.css' %}"/>
+
+    <link rel="stylesheet" href="{% static 'racesow/css/bootstrap-theme.min.css' %}" />
+    <link rel="stylesheet" href="{% static 'racesow/css/style.min.css' %}"/>
+
     <link rel="shortcut icon" href="{% static 'racesow/images/mgx_icon.png' %}">
 </head>
 <body>
+    {% url 'rs:home' as home %}
+    {% url 'rs:pln' as pn %}
+    {% url 'rs:plo' as po %}
+    {% url 'rs:mln' as mn %}
+    {% url 'rs:mlo' as mo %}
 
-<div id="wrapper">{% url 'rs:home' as home %}{% url 'rs:pln' as pn %}{% url 'rs:plo' as po %}{% url 'rs:mln' as mn %}{% url 'rs:mlo' as mo %}
-    <div id="logo">{% block logo %}<a href="{{ home }}"><img src="{% static 'racesow/images/mgx_logo.png' %}" alt="MGX Race logo (made by wh1te)"/></a>{% endblock %}</div>
-    <div id="navigation">
-        <ul>
-            <li class="{% active request home %}"><a class="fill-div" href="{{ home }}">Home</a></li>
-            <li class="{% active_subpage request pn po %}"><a class="fill-div" href="{{ pn }}">Players</a></li>
-            <li class="{% active_subpage request mn mo %}"><a class="fill-div" href="{{ mn }}">Maps</a></li>
-        </ul>
+    <header class="page-head">
+        <div class="page-title-bar">
+            <div class="container">
+                {% block logo %}
+                    <a href="{{ home }}">
+                        <img src="{% static 'racesow/images/mgx_logo.png' %}" alt="MGX Race logo (made by wh1te)"/>
+                    </a>
+                {% endblock %}
+            </div>
+        </div>
+        <div class="page-nav-bar">
+            <div class="container">
+                <nav class="navbar navbar-default" role="navigation">
+                    <div class="container-fluid">
+                        <div class="navbar-header">
+                            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#page-navbar-collapse">
+                                <span class="sr-only">Toggle navigation</span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                            </button>
+                        </div>
+                        <div class="collapse navbar-collapse" id="page-navbar-collapse">
+                            <ul class="nav nav-pills">
+                                <li role="presentation" class="{% active request home %}"><a href="{{ home }}">Home</a></li>
+                                <li role="presentation" class="{% active_subpage request pn po %}"><a href="{{ pn }}">Players</a></li>
+                                <li role="presentation" class="{% active_subpage request mn mo %}"><a href="{{ mn }}">Maps</a></li>
+                                <li role="presentation" class="disabled"><a href="#" class="disabled">Demos</a></li>
+                                <li role="presentation" class="disabled"><a href="#" class="disabled">Serverlist</a></li>
+                                <li role="presentation" class="disabled"><a href="#" class="disabled">Forum</a></li>
+                                <li role="presentation" class="disabled"><a href="#" class="disabled">Help</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="page-content">
+        <div class="container">
+            {% block navigation-sub %}{% endblock %}
+            {% block content %}{% endblock %}
+            {% block notice %}{% endblock %}
+        </div>
     </div>
-    {% block navigation-sub %}{% endblock %}
-    <div id="content">{% block content %}{% endblock %}</div>
-    <div id="notice">{% block notice %}{% endblock %}</div>
-</div>
+
+    <footer class="page-foot">
+        <small>Copyright &copy; MGX Race Development Team 2015. All rights reserved.</small>
+    </footer>
+
+    <script src="{% static 'racesow/js/jquery.min.js' %}"></script>
+    <script src="{% static 'racesow/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'racesow/js/navbar.js' %}"></script>
 </body>
 </html>
