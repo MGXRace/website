@@ -1,4 +1,5 @@
 from django import template
+from django.template import defaultfilters
 
 register = template.Library()
 
@@ -26,7 +27,9 @@ def format_header(column, order):
     col_l = column.lower().replace(' ', '')
     if "-" + col_l == order:
         # if col_l is "points" and order is "-points", the column title should be "Points-"
-        result['title'] = column.capitalize() + "-"
+        result['title'] = column.capitalize() + " <i class='fa fa-chevron-down'></i>"
+        # don't escape the html
+        result['title'] = defaultfilters.safe(result['title'])
         # if col_l is "points" and order is "-points", clicking Points url should order results with "points"
         result['url'] = col_l
     else:
@@ -35,7 +38,9 @@ def format_header(column, order):
         result['url'] = "-" + col_l
         if col_l == order:
             # if col_l is "points" and current sort is "points", the column title should be "Points+"
-            result['title'] = column.capitalize() + "+"
+            result['title'] = column.capitalize() + " <i class='fa fa-chevron-up'></i>"
+            # don't escape the html
+            result['title'] = defaultfilters.safe(result['title'])
         else:
             # if col_l is "points" and current sort is "skill", the column title should be "Points"
             result['title'] = column.capitalize()
