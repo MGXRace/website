@@ -1,15 +1,37 @@
 {% if results.paginator.num_pages > 1 %}
-<div class="pagination">
-    <span class="step-links">
-        {% if results.has_previous %}
-            <a href="{% url next_url playerid=player.id page=results.previous_page_number q=query order=order %}">previous</a>
-        {% endif %}
-        <span class="current">
-            Page {{ results.number }} of {{ results.paginator.num_pages }}.
-        </span>
-        {% if results.has_next %}
-            <a href="{% url next_url playerid=player.id page=results.next_page_number q=query order=order %}">next</a>
-        {% endif %}
-    </span>
-</div>
+    <nav>
+        <ul class="pagination">
+            {% if results.has_previous %}
+                <li>
+                    <a href="{% url next_url playerid=player.id page=1 q=query order=order %}">
+                        <i class="fa fa-fast-backward"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url next_url playerid=player.id page=results.previous_page_number q=query order=order %}">
+                        <i class="fa fa-backward"></i>
+                    </a>
+                </li>
+            {% endif %}
+
+            {% for page in results.paginator.page_range %}
+                <li {% if results.number == page %} class="active" {% endif %}>
+                    <a href="{% url next_url playerid=player.id page=page q=query order=order %}">{{ page }}</a>
+                </li>
+            {% endfor %}
+
+            {% if results.has_next %}
+                <li>
+                    <a href="{% url next_url playerid=player.id page=results.next_page_number q=query order=order %}">
+                        <i class="fa fa-forward"></i>
+                    </a>
+                </li>
+                <li>
+                    <a href="{% url next_url playerid=player.id page=results.paginator.num_pages q=query order=order %}">
+                        <i class="fa fa-fast-forward"></i>
+                    </a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
 {% endif %}

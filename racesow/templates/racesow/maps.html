@@ -6,107 +6,103 @@
     {{ block.super }} - Maps
 {% endblock title %}
 
-{% block navigation-sub %}
-    {% url 'rs:mln' as mnew %}
-    {% url 'rs:mlo' as mold %}
-
-    <ul class="nav nav-tabs">
-        <li role="presentation" class="{% active_subpage request mnew %}"><a href="{{ mnew }}">Current version</a></li>
-        <li role="presentation" class="{% active_subpage request mold %}"><a href="{{ mold }}">Old version (1.0)</a></li>
-    </ul>
-{% endblock navigation-sub %}
-
 {% block content %}{% spaceless %}
     <h1>Maps</h1>
 
     {% if maps %}
-        <p>Displaying {{ maps|length }} / {{ maps.paginator.count }} maps.</p>
-    {% endif %}
-
-    {% include "racesow/elements/searchbox.html" with placeholder="Map" %}
-
-    {% if maps %}
         {# Handle page stuff #}
-        {% with results=maps next_url=maplist %}
-            {% include "racesow/elements/pagination.html" %}
-        {% endwith %}
+        <div class="clearfix">
+            <div class="table-search pull-right">
+                {% include "racesow/elements/searchbox.html" with placeholder="Map" %}
+            </div>
 
-        {# Print the version-specific maplist #}
-        <table class="table table-bordered table-striped table-hover table-condensed">
-        {% if version == "old" %}
-            {# Name  Weapons  Races-  Playtime  DL  Long name #}
-            <tr>
-                <th>
-                    {% format_header "name" order as h_name %}
-                    <a href="{% url maplist page=1 q=query order=h_name.url %}">{{ h_name.title }}</a>
-                </th>
-                <th>
-                    {% format_header "weapons" order as h_weapons %}
-                    <a href="{% url maplist page=1 q=query order=h_weapons.url %}">{{ h_weapons.title }}</a>
-                </th>
-                <th>
-                    {% format_header "races" order as h_races %}
-                    <a href="{% url maplist page=1 q=query order=h_races.url %}">{{ h_races.title }}</a>
-                </th>
-                <th>
-                    {% format_header "playtime" order as h_playtime %}
-                    <a href="{% url maplist page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a>
-                </th>
-                <th>DL</th>
-                <th>
-                    {% format_header "long name" order as h_ln %}
-                    <a href="{% url maplist page=1 q=query order=h_ln.url %}">{{ h_ln.title }}</a>
-                </th>
-            </tr>
-            {% for map in maps %}
+            {# Print the version-specific maplist #}
+            <table class="table table-bordered table-striped table-hover table-condensed">
+            {% if version == "old" %}
+                {# Name  Weapons  Races-  Playtime  DL  Long name #}
                 <tr>
-                    <td>
-                        <a href={% url 'rs:mdo' map.id %}>{{ map.name }}</a>
-                    </td>
-                    <td>{{ map.get_weapons|safe }}</td>
-                    <td>{{ map.races }}</td>
-                    <td>{{ map.playtime_formatted }}</td>
-                    <td>pk3</td>
-                    <td>{{ map.htmlname_short|safe }}</td>
+                    <th>
+                        {% format_header "name" order as h_name %}
+                        <a href="{% url maplist page=1 q=query order=h_name.url %}">{{ h_name.title }}</a>
+                    </th>
+                    <th>
+                        {% format_header "weapons" order as h_weapons %}
+                        <a href="{% url maplist page=1 q=query order=h_weapons.url %}">{{ h_weapons.title }}</a>
+                    </th>
+                    <th>
+                        {% format_header "races" order as h_races %}
+                        <a href="{% url maplist page=1 q=query order=h_races.url %}">{{ h_races.title }}</a>
+                    </th>
+                    <th>
+                        {% format_header "playtime" order as h_playtime %}
+                        <a href="{% url maplist page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a>
+                    </th>
+                    <th>DL</th>
+                    <th>
+                        {% format_header "long name" order as h_ln %}
+                        <a href="{% url maplist page=1 q=query order=h_ln.url %}">{{ h_ln.title }}</a>
+                    </th>
                 </tr>
-            {% endfor %}
-        {% elif version == "new" %}
-            {#  Name  Races-  Playtime  DL  Tags #}
-            <tr>
-                <th>
-                    {% format_header "name" order as h_name %}
-                    <a href="{% url maplist page=1 q=query order=h_name.url %}">{{ h_name.title }}</a>
-                </th>
-                <th>
-                    {% format_header "races" order as h_races %}
-                    <a href="{% url maplist page=1 q=query order=h_races.url %}">{{ h_races.title }}</a>
-                </th>
-                <th>
-                    {% format_header "playtime" order as h_playtime %}
-                    <a href="{% url maplist page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a>
-                </th>
-                <th>DL</th>
-                <th>Tags</th>
-            </tr>
-            {% for map in maps %}
+                {% for map in maps %}
+                    <tr>
+                        <td>
+                            <a href={% url 'rs:mdo' map.id %}>{{ map.name }}</a>
+                        </td>
+                        <td>{{ map.get_weapons|safe }}</td>
+                        <td>{{ map.races }}</td>
+                        <td>{{ map.playtime_formatted }}</td>
+                        <td>pk3</td>
+                        <td>{{ map.htmlname_short|safe }}</td>
+                    </tr>
+                {% endfor %}
+            {% elif version == "new" %}
+                {#  Name  Races-  Playtime  DL  Tags #}
                 <tr>
-                    <td>
-                        <a href={% url 'rs:mdn' map.id %}>{{ map.name }}</a>
-                    </td>
-                    <td>{{ map.races }}</td>
-                    <td>{{ map.playtime_formatted }}</td>
-                    <td>pk3</td>
-                    <td>
-                        {% for tag in map.tags.all %}
-                            {{ tag.name }}
-                        {% endfor %}
-                    </td>
+                    <th>
+                        {% format_header "name" order as h_name %}
+                        <a href="{% url maplist page=1 q=query order=h_name.url %}">{{ h_name.title }}</a>
+                    </th>
+                    <th>
+                        {% format_header "races" order as h_races %}
+                        <a href="{% url maplist page=1 q=query order=h_races.url %}">{{ h_races.title }}</a>
+                    </th>
+                    <th>
+                        {% format_header "playtime" order as h_playtime %}
+                        <a href="{% url maplist page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a>
+                    </th>
+                    <th>DL</th>
+                    <th>Tags</th>
                 </tr>
-            {% endfor %}
-        {% else %}
-            <p>Error: unexpected version '{{ version }}'</p>
-        {% endif %}
-        </table>
+                {% for map in maps %}
+                    <tr>
+                        <td>
+                            <a href={% url 'rs:mdn' map.id %}>{{ map.name }}</a>
+                        </td>
+                        <td>{{ map.races }}</td>
+                        <td>{{ map.playtime_formatted }}</td>
+                        <td>pk3</td>
+                        <td>
+                            {% for tag in map.tags.all %}
+                                {{ tag.name }}
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <p>Error: unexpected version '{{ version }}'</p>
+            {% endif %}
+            </table>
+
+            <div class="pull-left">
+                <p>Displaying {{ maps|length }} / {{ maps.paginator.count }} maps.</p>
+            </div>
+
+            <div class="pull-right">
+                {% with results=maps next_url=maplist %}
+                    {% include "racesow/elements/pagination.html" %}
+                {% endwith %}
+            </div>
+        </div>
     {% else %}
         <p>No maps found for version '{{ version }}'.</p>
     {% endif %}

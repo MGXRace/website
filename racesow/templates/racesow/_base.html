@@ -46,8 +46,40 @@
                         <div class="collapse navbar-collapse" id="page-navbar-collapse">
                             <ul class="nav nav-pills">
                                 <li role="presentation" class="{% active request home %}"><a href="{{ home }}">Home</a></li>
-                                <li role="presentation" class="{% active_subpage request pn po %}"><a href="{{ pn }}">Players</a></li>
-                                <li role="presentation" class="{% active_subpage request mn mo %}"><a href="{{ mn }}">Maps</a></li>
+                                <li role="presentation" class="dropdown {% active_subpage request pn po %}">
+                                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                                        Players <span class="caret"></span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a href="{{ pn }}">
+                                                {% version_string "new" %}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ po }}">
+                                                {% version_string "old" %}
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li role="presentation" class="dropdown {% active_subpage request mn mo %}">
+                                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                                        Maps <span class="caret"></span>
+                                    </a>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a href="{{ mn }}">
+                                                {% version_string "new" %}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ mo }}">
+                                                {% version_string "old" %}
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </li>
                                 <li role="presentation" class="disabled"><a href="#" class="disabled">Demos</a></li>
                                 <li role="presentation" class="disabled"><a href="#" class="disabled">Serverlist</a></li>
                                 <li role="presentation" class="disabled"><a href="#" class="disabled">Forum</a></li>
