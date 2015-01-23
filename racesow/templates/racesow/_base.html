@@ -47,7 +47,7 @@
                             <ul class="nav nav-pills">
                                 <li role="presentation" class="{% active request home %}"><a href="{{ home }}">Home</a></li>
                                 <li role="presentation" class="dropdown {% active_subpage request pn po %}">
-                                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                                    <a href="{{ pn }}" role="button" aria-expanded="false">
                                         Players <span class="caret"></span>
                                     </a>
                                     <ul class="dropdown-menu">
@@ -64,7 +64,7 @@
                                     </ul>
                                 </li>
                                 <li role="presentation" class="dropdown {% active_subpage request mn mo %}">
-                                    <a class="dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-expanded="false">
+                                    <a href="{{ mn }}" role="button" aria-expanded="false">
                                         Maps <span class="caret"></span>
                                     </a>
                                     <ul class="dropdown-menu">
