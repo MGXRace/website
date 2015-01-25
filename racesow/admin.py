@@ -10,6 +10,19 @@ class MapAdmin(admin.ModelAdmin):
     list_display = ('name', 'enabled', 'get_tags')
     ordering = ('name', )
     search_fields = ('name', )
+    # specify fields to show on the add-page
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'pk3file', 'tags'),
+            'classes': ('wide', ),
+        })
+    ,)
+
+    # add extra css definitions for the add-page
+    class Media:
+        css = {
+             'all': ('admin/css/admin_extra.css',)
+        }
 
 admin.site.register(Map, MapAdmin)
 admin.site.register(MapRating)
