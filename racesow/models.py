@@ -63,6 +63,8 @@ class Map(models.Model):
         created (datetime): Datetime map was added
         oneliner (str): Oneliner message for the map
         tags (RelatedManager): Manager for Tag objects associated with the map
+        compute_points (bool): True if the map has new race times or playtimes
+        last_computation (datetime): last computation of points for races on this map
     """
     name = models.CharField(max_length=255)
     pk3file = models.FileField(upload_to='maps', blank=True)
@@ -73,7 +75,8 @@ class Map(models.Model):
     created = models.DateTimeField(default=timezone.now)
     oneliner = models.CharField(max_length=255, blank=True)
     tags = models.ManyToManyField(Tag)
-    points_last_processed = models.DateTimeField(default=timezone.now)
+    compute_points = models.BooleanField(default=False)
+    last_computation = models.DateTimeField(default=timezone.now)
 
     def __unicode__(self):
         return self.name
@@ -140,7 +143,10 @@ class Player(models.Model):
         simplified (str): racesow username without colorcodes
         playtime (int): player's ingame playtime in seconds
         races (int): number of races the player has finished
-        maps (int): number of maps the player has completed a race on
+        maps (int): number of maps the player has raced on
+        maps_finished (int): number of maps the player has completed a race on
+        points (int): total number of point this player has earned, in thousands
+
     """
     username = models.CharField(max_length=64, unique=True)
     admin = models.BooleanField(default=False)
@@ -149,8 +155,8 @@ class Player(models.Model):
     playtime = models.BigIntegerField(default=0)
     races = models.IntegerField(default=0)
     maps = models.IntegerField(default=0)
-    # TODO maps_with_time = models.IntegerField(default=0)  # for tracking actually finished maps
-    # TODO points = models.IntegerField(default=0)  # for tracking total points
+    maps_finished = models.IntegerField(default=0)  # for tracking actually finished maps
+    points = models.IntegerField(default=0)         # total number of points
 
     def __unicode__(self):
         return '<Player user:{}, nick:{}>'.format(self.username,
@@ -161,6 +167,18 @@ class Player(models.Model):
 
     def playtime_formatted(self):
         return millis_to_str(int(self.playtime))
+
+    def get_points(self):
+        # transform points back to float with 3 decimals
+        return float(self.points / 1000.0)
+
+    def set_points(self, points):
+        # keeps 3 decimals by multiplying with 1000
+        self.points = int(points * 1000)
+
+    def add_points(self, points):
+        # keeps 3 decimals by multiplying with 1000
+        self.points += int(points * 1000)
 
 
 class RaceHistory(models.Model):
@@ -173,6 +191,7 @@ class RaceHistory(models.Model):
         time (int): Time to complete the race in milliseconds (null if no time was made)
         playtime (int): Player's cumulative playtime on the map
         points (int): Points awarded to the player who completed this race, in thousands
+        rank (int): The place that the racetime took on the map toplist
         created (datetime): Datetime when the record was made
         last_played (datetime): Datetime when the playtime stats were updated
     """
@@ -182,6 +201,7 @@ class RaceHistory(models.Model):
     time = models.IntegerField(**_null)
     playtime = models.BigIntegerField(default=0)
     points = models.IntegerField(default=0)
+    rank = models.IntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
     last_played = models.DateTimeField(default=timezone.now)
 
@@ -203,7 +223,10 @@ class Race(models.Model):
         server (Server): Server the race was performed on
         time (int): Time to complete the race in milliseconds (null if no time was made)
         playtime (int): Player's cumulative playtime on the map
-        points (int): Points awarded to the player who completed this race, in thousands
+        points (int): Points awarded to the player who completed this race, in thousands, used to compute player
+                      'skill'. -1000 means not yet evaluated.
+        rank (int): The place that the racetime took on the map toplist, used to display gold/silver/bronze medals.
+                    Updated during point calculation.
         created (datetime): Datetime when the record was made
         last_played (datetime): Datetime when the playtime stats were updated
     """
@@ -213,6 +236,7 @@ class Race(models.Model):
     time = models.IntegerField(**_null)
     playtime = models.BigIntegerField(default=0)
     points = models.IntegerField(default=0)
+    rank = models.IntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
     last_played = models.DateTimeField(default=timezone.now)
 

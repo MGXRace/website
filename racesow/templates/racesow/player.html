@@ -17,7 +17,7 @@
             <p>Go to player in <a href="{% url playerdetails_other playerid=player_other.id %}">{% version_string version_other %}</a></p>
         {% endif %}
         <p>
-            Points: {{ player.points }} <br>
+            Points: {{ player.get_points }} <br>
             Skill: {{ player.skill|floatformat:2 }} <br>
             Races: {{ player.races }} <br>
             Maps played: {{ player.maps }} <br>

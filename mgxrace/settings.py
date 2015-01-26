@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
 import sys
+from datetime import timedelta
+
+import djcelery
+djcelery.setup_loader()
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -36,6 +40,13 @@ ALLOWED_HOSTS = []
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+# http://www.marinamele.com/2014/02/how-to-install-celery-on-django-and.html
+# http://www.caktusgroup.com/blog/2014/06/23/scheduling-tasks-celery/
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+
+
 BROKER_URL = 'amqp://guest:guest@localhost//'
 
 # Application definition
@@ -51,6 +62,7 @@ INSTALLED_APPS = (
     'racesowold',
     'racesow',
     'debug_toolbar',
+    'djcelery',
 )
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
 
@@ -82,7 +94,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'racesow_celery',
         'USER': 'rs_django',
-        'PASS': '0L7l2PUWtQDCmqNEZw02',
+        'PASSWORD': '0L7l2PUWtQDCmqNEZw02',
         'HOST': 'localhost',
     }
 }
@@ -117,6 +129,16 @@ INTERNAL_IPS = ['127.0.0.1']
 # INTERNAL_IPS = ['127.0.0.1', '217.122.146.83']  # debug toolbar
 
 CELERYD_HIJACK_ROOT_LOGGER = False
+
+# http://celery.readthedocs.org/en/latest/userguide/periodic-tasks.html#entries
+CELERYBEAT_SCHEDULE = {
+    'evaluate-maps-every-1-minute': {
+        'task': 'racesow.tasks.recompute_updated_maps',
+        'schedule': timedelta(minutes=1),
+    },
+}
+
+
 
 LOGGING = {
     'version': 1,

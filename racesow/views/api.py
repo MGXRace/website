@@ -11,7 +11,7 @@ from django.views.generic import View
 
 from racesow.models import Map, Tag, Player, Race, RaceHistory, Checkpoint
 from racesow.serializers import mapSerializer, playerSerializer, raceSerializer
-from racesow.services import get_record, is_default_username, player_process_playtime
+from racesow.services import get_record, is_default_username
 from racesow.utils import strip_color_tokens
 from racesowold.models import Map as Mapold, PlayerMap
 from racesowold.serializers import raceSerializer as raceoldSerializer, playerSerializer as playeroldSerializer
@@ -206,19 +206,27 @@ class APIPlayer(View):
             player = Player.objects.get(username=username)
             race, created = Race.objects.get_or_create(player=player, map_id=mid)
         except Exception as e:
-            print e
             data = json.dumps({'error': 'Could not make race for user/map combination'})
             return HttpResponse(data, content_type='application/json', status=400)
 
         try:
+            map_ = Map.objects.get(pk=mid)
+        except Map.DoesNotExist:
+            data = json.dumps({'error': 'Could not find map with id {}'.format(mid)})
+            return HttpResponse(data, content_type='application/json', status=400)
+
+        try:
+            # update player's statistics
             player.playtime += playtime
             player.races += races
             if created:
                 player.maps += 1
             player.save()
 
+            # update information for the race
             race.playtime += playtime
             race.last_played = timezone.now()
+            race.set_points(-1)  # set negative points to indicate that this race is not yet processed
             race.save()
 
             raceh = RaceHistory.objects.create(
@@ -226,24 +234,19 @@ class APIPlayer(View):
                 map_id=mid,
                 server=race.server,
                 time=race.time,
-                points=race.points,
                 playtime=race.playtime,
                 created=race.created,
                 last_played=race.last_played)
+
+            # trigger computation of points for this map in next scheduled task
+            map_.compute_points = True
+            map_.save()
         except:
             # TODO remove debug code
             import traceback
             traceback.print_exc()
             data = json.dumps({'error': 'Unexpected error..'})
             return HttpResponse(data, content_type='application/json', status=400)
-
-        try:
-            # TODO schedule task with Celery
-            player_process_playtime(player, mid)
-        except:
-            print "Error in player_process_playtime({}, {})".format(player, mid)
-            import traceback
-            traceback.print_exc()
 
         return HttpResponse('', content_type='text/plain')
 
@@ -361,6 +364,8 @@ class APIRace(View):
         if clear_oneliner:
             # remove old oneliner
             map_.oneliner = ""
+            # trigger computation of points for this map in next scheduled task
+            map_.compute_points = True
             map_.save()
 
         # No checks that the race is faster. That should be done on the gameserver
@@ -381,6 +386,7 @@ class APIRace(View):
             last_played=race.last_played)
 
         # Update the record race
+        race.set_points(-1)  # set negative points to indicate that this race is not yet processed
         race.server = request.server
         race.time = time
         race.created = timezone.now()

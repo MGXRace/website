@@ -72,17 +72,47 @@ def map_get_rec_value(num_completed_races, races, best_race):
     return min(rec_points, MAX_REC_POINTS)
 
 
-def map_evaluate_points(mid, rec_points=None, completed_races=None, all_races=None):
+def _update_points(race, new_points, race_rank, reset):
+    # save old points value for updating the player totals
+    old_points = race.get_points()
+
+    # award points for the player's race
+    race.set_points(new_points)
+    race.rank = race_rank  # set rank (for medals)
+    race.save()
+
+    if reset:
+        # race & player points were reset, update player's total points and maps_finished
+        race.player.add_points(new_points)
+        race.player.maps_finished += 1
+    else:
+        if not floats_differ(old_points, -1):
+            # race did not have points yet, increment finished maps and add points to player total
+            race.player.add_points(new_points)
+            race.player.maps_finished += 1
+        elif floats_differ(new_points, old_points):
+            # race did have points, different from the newly computed value; subtract old value from player total
+            race.player.add_points(new_points - old_points)
+        else:
+            # nothing changed for player's total points/maps_finished
+            return
+    race.player.save()
+
+
+def map_evaluate_points(mid, reset):
     """Evaluates points awarded to races for map 'mid'.
 
-    rec_points, completed_races and all_races can be passed as parameters to save time"""
+
+    :param mid:     map to evaluate races of
+    :param reset:   True if all points have been reset,
+                    False if points should be updated in-place
+    """
 
     t_start = time()
     num_completed_races = 0
     try:
         # get Race objects with times (sorted by racetime ascendingly)
-        if not completed_races:
-            completed_races = Race.objects.filter(map__id=mid, time__isnull=False).order_by('time')
+        completed_races = Race.objects.filter(map__id=mid, time__isnull=False).order_by('time')
         num_completed_races = len(completed_races)
 
         if num_completed_races == 0:
@@ -90,17 +120,14 @@ def map_evaluate_points(mid, rec_points=None, completed_races=None, all_races=No
             return
 
         # get all Race objects (sorted by playtime descendingly)
-        if not all_races:
-            all_races = Race.objects.filter(map__id=mid).order_by('-playtime')
+        all_races = Race.objects.filter(map__id=mid).order_by('-playtime').select_related('player')
 
         # determine points for first place
         best_race = completed_races[0]
-        if not rec_points:
-            rec_points = map_get_rec_value(num_completed_races, all_races, best_race)
+        rec_points = map_get_rec_value(num_completed_races, all_races, best_race)
 
-        # award points to the fastest player
-        best_race.set_points(rec_points)
-        best_race.save()
+        # update race/player points
+        _update_points(best_race, rec_points, 1, reset)
 
         if num_completed_races == 1:
             # no further races to award points
@@ -117,9 +144,11 @@ def map_evaluate_points(mid, rec_points=None, completed_races=None, all_races=No
         second_place_points = min(second_place_cap, second_place_cap -
                                   (x * ((completed_races[1].time - first_time) / (top20avg * 0.8))))
 
-        # award the points
-        completed_races[1].set_points(second_place_points)
-        completed_races[1].save()
+        # update race/player points
+        _update_points(completed_races[1], second_place_points, 2, reset)
+        # completed_races[1].set_points(second_place_points)
+        # completed_races[1].rank = 2
+        # completed_races[1].save()
 
         if num_completed_races == 2:
             # no further races to award points
@@ -128,55 +157,57 @@ def map_evaluate_points(mid, rec_points=None, completed_races=None, all_races=No
         # award points for 3rd, 4th... place by differentiating their times with first place, with a minimum of 2
         # points to the previous time
         points_above = second_place_points
-        for race in completed_races[2:]:
+        for rank, race in enumerate(completed_races[2:]):
             calculated_points = max(0, min(points_above - 2, second_place_cap -
                                            (x * ((race.time - first_time) / (top20avg * 0.8)))))
-            race.set_points(calculated_points)
-            race.save()
+            _update_points(race, calculated_points, 3 + rank, reset)
+            # race.set_points(calculated_points)
+            # race.rank = 3 + rank
+            # race.save()
             points_above = calculated_points
     finally:
         calc_time = time() - t_start
         if settings.DEBUG:
-            print "map_evaluate_points({}, rec_points={}) completed in {:.3f} seconds (num_completed_races {})".format(
-                mid, rec_points, calc_time, num_completed_races)
+            print "map_evaluate_points({}, reset={}) completed in {:.3f} seconds (num_completed_races {})".format(
+                mid, reset, calc_time, num_completed_races)
 
 
-def player_process_playtime(player, mid):
-    """Compare rec_points after a player's updated playtime on map 'mid' has been stored. If rec_points is changed,
-    the map points need to be updated, otherwise we can save the effort."""
-
-    # get Race objects with times (sorted by racetime ascendingly)
-    completed_races = Race.objects.filter(map__id=mid, time__isnull=False).order_by('time')
-    if not completed_races:
-        # no times on this map yet
-        return
-    best_race = completed_races[0]
-    cur_rec_points = best_race.get_points()
-
-    if best_race.player.pk == player.pk:
-        # the fastest player cannot increase his own score by playing longer
-        if settings.DEBUG:
-            print "player_process_playtime({}, {}) fastest player does not trigger map_evaluate_points".format(
-                player, mid)
-        return
-
-    # get all Race objects (sorted by playtime descendingly)
-    all_races = Race.objects.filter(map__id=mid).order_by('-playtime')
-
-    # determine points for first place
-    new_rec_points = map_get_rec_value(len(completed_races), all_races, best_race)
-
-    if floats_differ(cur_rec_points, new_rec_points):
-        # rec_points is changed by the added playtime, changes, re-evaluate map points.
-        if settings.DEBUG:
-            print "player_process_playtime({}, {}) cur_rec_points %.3f, new_rec_points %.3f --> re-evaluate map points"\
-                .format(player, mid, cur_rec_points, new_rec_points)
-        map_evaluate_points(mid, rec_points=new_rec_points, completed_races=completed_races, all_races=all_races)
-        return True
-    if settings.DEBUG:
-        print "player_process_playtime({}, {}) cur_rec_points %.3f, new_rec_points %.3f --> do nothing"\
-            .format(player, mid, cur_rec_points, new_rec_points)
-    return False
+# def player_process_playtime(player, mid):
+#     """Compare rec_points after a player's updated playtime on map 'mid' has been stored. If rec_points is changed,
+#     the map points need to be updated, otherwise we can save the effort."""
+#
+#     # get Race objects with times (sorted by racetime ascendingly)
+#     completed_races = Race.objects.filter(map__id=mid, time__isnull=False).order_by('time')
+#     if not completed_races:
+#         # no times on this map yet
+#         return
+#     best_race = completed_races[0]
+#     cur_rec_points = best_race.get_points()
+#
+#     if best_race.player.pk == player.pk:
+#         # the fastest player cannot increase his own score by playing longer
+#         if settings.DEBUG:
+#             print "player_process_playtime({}, {}) fastest player does not trigger map_evaluate_points".format(
+#                 player, mid)
+#         return
+#
+#     # get all Race objects (sorted by playtime descendingly)
+#     all_races = Race.objects.filter(map__id=mid).order_by('-playtime')
+#
+#     # determine points for first place
+#     new_rec_points = map_get_rec_value(len(completed_races), all_races, best_race)
+#
+#     if floats_differ(cur_rec_points, new_rec_points):
+#         # rec_points is changed by the added playtime, changes, re-evaluate map points.
+#         if settings.DEBUG:
+#             print "player_process_playtime({}, {}) cur_rec_points %.3f, new_rec_points %.3f --> re-evaluate map points"\
+#                 .format(player, mid, cur_rec_points, new_rec_points)
+#         map_evaluate_points(mid, rec_points=new_rec_points, completed_races=completed_races, all_races=all_races)
+#         return True
+#     if settings.DEBUG:
+#         print "player_process_playtime({}, {}) cur_rec_points %.3f, new_rec_points %.3f --> do nothing"\
+#             .format(player, mid, cur_rec_points, new_rec_points)
+#     return False
 
 
 def get_record(flt):

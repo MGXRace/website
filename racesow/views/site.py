@@ -1,14 +1,15 @@
 import logging
+
 import celery
 from django.conf import settings
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import Http404, HttpResponse
 from django.shortcuts import render, redirect
 from django.views.generic import View
-from racesow import tasks
+
 from racesow.models import Map, Race, Player
-from racesow.services import map_evaluate_points
 from racesowold.models import Map as Mapold, PlayerMap, Player as Playerold
+
 
 __author__ = 'Mark'
 
@@ -178,17 +179,6 @@ class MapDetails(View):
             except Mapold.DoesNotExist:
                 pass
 
-            # TODO schedule task with Celery
-            try:
-                import time
-                t_tmp = time.time()
-                map_evaluate_points(map_id)
-                context.update({'notice': "This page may have been loaded slower than normal: spent {:.2f} seconds recalculating points.".format(time.time() - t_tmp)})
-            except:
-                print "Error in map_evaluate_points({})".format(map_id)
-                import traceback
-                traceback.print_exc()
-
             # translate table column to a database column
             db_order = order
             if db_order.endswith('player'):
@@ -231,8 +221,8 @@ class PlayerList(View):
     def playerlist_validate_order(self, order, version):
         if version == 'new':
             # compare order with valid table header orderings
-            if order not in ['name', 'maps', 'races', 'playtime',
-                             '-name', '-maps', '-races', '-playtime']:
+            if order not in ['name', 'points', 'skill', 'maps', 'races', 'playtime',
+                             '-name', '-points', '-skill', '-maps', '-races', '-playtime']:
                 order = '-races'  # default
         elif version == 'old':
             # compare order with valid table header orderings
@@ -272,12 +262,15 @@ class PlayerList(View):
             if order.endswith('name'):
                 # don't order by 'name' because it contains colorcodes
                 db_order_l[0] = order.replace('name', 'simplified')
-            elif order.endswith('races'):
+            elif order.endswith('races') \
+                    or order.endswith('points') \
+                    or order.endswith('skill'):
                 # append simplified as 2nd order for columns with equal rows
                 db_order_l.append('simplified')
 
             # get players matching filter and ordering criteria
-            player_list = Player.objects.filter(**db_filter).order_by(*db_order_l)
+            player_list = Player.objects.filter(**db_filter).order_by(*db_order_l)\
+                .extra(select={'skill': 'IF(maps_finished >= 5, points/maps_finished/1000, 0)'})
 
             # specify the url to put in <form> href
             context.update({'form_url': 'rs:pln'})
@@ -376,9 +369,14 @@ class PlayerDetails(View):
 
             pmaps_list = Race.objects.filter(**db_filter).order_by(*db_order_l).select_related('map', 'player')
 
-            # TODO skill/medals for new version
-            player.skill = -1
+            player.skill = player.get_points() / player.maps_finished if player.maps_finished else 0
             player.pmaps = len(pmaps_list)
+
+            context.update({'medals': {
+                'gold': len(Race.objects.filter(player=player, rank=1)),
+                'silver': len(Race.objects.filter(player=player, rank=2)),
+                'bronze': len(Race.objects.filter(player=player, rank=3))}
+            })
 
             # specify the url to put in <form> href
             context.update({'form_url': 'rs:pdn'})

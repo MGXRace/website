@@ -59,8 +59,15 @@
         {% elif version == "new" %}
             {# Name Maps Races Playtime #}
             <tr class="tableheader">
-                <td class="name">{% format_header "name" order as h_name %}
+                <td class="name">
+                    {% format_header "name" order as h_name %}
                     <a href="{% url playerlist page=1 q=query order=h_name.url %}">{{ h_name.title }}</a>
+                <td class="points">
+                    {% format_header "points" order as h_points %}
+                    <a href="{% url playerlist page=1 q=query order=h_points.url %}">{{ h_points.title }}</a></td>
+                <td class="points">
+                    {% format_header "skill" order as h_skill %}
+                    <a href="{% url playerlist page=1 q=query order=h_skill.url %}">{{ h_skill.title }}</a></td>
                 <td class="points">
                     {% format_header "maps" order as h_maps %}
                     <a href="{% url playerlist page=1 q=query order=h_maps.url %}">{{ h_maps.title }}</a></td>
@@ -74,6 +81,8 @@
             {% for player in players %}
                 <tr>
                     <td class="name"><a href={% url 'rs:pdn' player.id %}>{{ player.htmlname|safe }}</a></td>
+                    <td class="points">{{ player.get_points|floatformat:0 }}</td>
+                    <td class="points">{{ player.skill|floatformat:2 }}</td>
                     <td class="points">{{ player.maps }}</td>
                     <td class="points">{{ player.races }}</td>
                     <td class="time">{{ player.playtime_formatted }}</td>
