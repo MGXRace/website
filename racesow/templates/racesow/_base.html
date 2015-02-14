@@ -1,5 +1,3 @@
-{% load staticfiles %}
-{% load tags %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,10 +5,9 @@
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta content="MGX racesow server group web interface with demos." name="description">
     <title>{% block title %}Racesow 1.5{% endblock %}</title>
-
-    <link rel="stylesheet" href="{% static 'racesow/css/bootstrap-theme.min.css' %}" />
+    {% load staticfiles %}{% load tags %}
+    <link rel="stylesheet" href="{% static 'racesow/css/bootstrap-theme.min.css' %}"/>
     <link rel="stylesheet" href="{% static 'racesow/css/style.min.css' %}"/>
-
     <link rel="shortcut icon" href="{% static 'racesow/images/mgx_icon.png' %}">
 </head>
 <body>
