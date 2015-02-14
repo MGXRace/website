@@ -42,10 +42,6 @@ def map_get_rec_value(num_completed_races, races, best_race):
     :return: points to award to 1st place (value between MIN_REC_POINTS and MAX_REC_POINTS)
     """
 
-    # if num_completed_races >= SKIP_BUMPTIME_OFFSET:
-    #     # enough top entries, rec is worth the maximum number of points
-    #     return MAX_REC_POINTS
-
     # determine rec points from playtimes
     rec_points = MIN_REC_POINTS
 
