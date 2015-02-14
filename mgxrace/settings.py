@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 import os
 import sys
 from datetime import timedelta
+from keys import cfg
 
 import djcelery
 djcelery.setup_loader()
@@ -23,7 +24,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'qaddpa2wq=vdb(a61uy(3@wvwfgld2p&*7o&#ukuj2e+@5b9r*'
+SECRET_KEY = cfg.get('secret')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -88,7 +89,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'racesow_celery',
         'USER': 'rs_django',
-        'PASSWORD': '0L7l2PUWtQDCmqNEZw02',
+        'PASSWORD': cfg.get('db_pass'),
         'HOST': 'localhost',
     }
 }
