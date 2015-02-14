@@ -60,7 +60,6 @@ INSTALLED_APPS = (
     'racesow',
     'djcelery',
 )
-DEBUG_TOOLBAR_PATCH_SETTINGS = False
 
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
