@@ -40,9 +40,6 @@ ALLOWED_HOSTS = []
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
-
-# http://www.marinamele.com/2014/02/how-to-install-celery-on-django-and.html
-# http://www.caktusgroup.com/blog/2014/06/23/scheduling-tasks-celery/
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 
@@ -61,13 +58,11 @@ INSTALLED_APPS = (
     'south',
     'racesowold',
     'racesow',
-    'debug_toolbar',
     'djcelery',
 )
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
 
 MIDDLEWARE_CLASSES = (
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     # 'django.middleware.csrf.CsrfViewMiddleware',
@@ -110,8 +105,6 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
@@ -126,7 +119,6 @@ TEMPLATE_CONTEXT_PROCESSORS = {
 }
 
 INTERNAL_IPS = ['127.0.0.1']
-# INTERNAL_IPS = ['127.0.0.1', '217.122.146.83']  # debug toolbar
 
 CELERYD_HIJACK_ROOT_LOGGER = False
 

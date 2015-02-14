@@ -1,33 +1,16 @@
 from __future__ import absolute_import
-import logging
+
+import time
+import datetime
 
 from celery import shared_task
-import time
 from celery.utils.log import get_task_logger
-import datetime
+
 from .models import Map, Player, Race
 from racesow import services
 
 
 logger = get_task_logger(__name__)
-
-
-@shared_task
-def add(x, y):
-    return x + y
-
-
-@shared_task
-def mul(x, y):
-    return x * y
-
-
-@shared_task
-def xsum(numbers):
-    logger.info("XSUM TEST")
-    time.sleep(5)
-    logger.info("XSUM TEST KLAAR ")
-    return sum(numbers)
 
 
 @shared_task
@@ -95,7 +78,7 @@ def recompute_updated_maps():
         services.map_evaluate_points(map_.id, reset=False)
         # Recomputes Race points for this map and update Player totals.
         # For every player that didn't have points yet for their race:
-        #       race.points = computed_points
+        # race.points = computed_points
         #       player.points += Race.points
         #       player.finished_maps += 1
         # else if the player's recomputed points are different from the current value (by a 0.01 margin)
