@@ -25,7 +25,7 @@
         {% endif %}
 
         <p>
-            Points: {{ player.points }} <br>
+            Points: {{ player.get_points }} <br>
             Skill: {{ player.skill|floatformat:2 }} <br>
             Races: {{ player.races }} <br>
             Maps played: {{ player.maps }} <br>

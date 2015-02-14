@@ -10,6 +10,12 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 import os
+import sys
+from datetime import timedelta
+
+import djcelery
+djcelery.setup_loader()
+
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
@@ -24,11 +30,23 @@ DEBUG = True
 
 TEMPLATE_DEBUG = True
 
-ALLOWED_HOSTS = []
+USE_TZ = True
 
+ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = ['*']
+
+#: Only add pickle to this list if your broker is secured
+#: from unwanted access (see userguide/security.html)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+
+
+BROKER_URL = 'amqp://guest:guest@localhost//'
 
 # Application definition
-
 INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,6 +58,7 @@ INSTALLED_APPS = (
     'south',
     'racesowold',
     'racesow',
+    'djcelery',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -67,9 +86,9 @@ PASSWORD_HASHERS = (
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'racesow',
+        'NAME': 'racesow_celery',
         'USER': 'rs_django',
-        'PASS': 'MyCoolPassword',
+        'PASSWORD': '0L7l2PUWtQDCmqNEZw02',
         'HOST': 'localhost',
     }
 }
@@ -85,8 +104,6 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
@@ -94,9 +111,54 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = os.environ['HOME'] + '/static/'
 
+# added for
 TEMPLATE_CONTEXT_PROCESSORS = {
     "django.core.context_processors.request",
     "django.contrib.auth.context_processors.auth",
 }
 
 INTERNAL_IPS = ['127.0.0.1']
+
+CELERYD_HIJACK_ROOT_LOGGER = False
+
+# http://celery.readthedocs.org/en/latest/userguide/periodic-tasks.html#entries
+CELERYBEAT_SCHEDULE = {
+    'evaluate-maps-every-1-minute': {
+        'task': 'racesow.tasks.recompute_updated_maps',
+        'schedule': timedelta(minutes=1),
+    },
+}
+
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'console':{
+            'level':'INFO',
+            'class':'logging.StreamHandler',
+            'stream': sys.stdout
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        # 'django.request': {
+        #     'handlers': ['mail_admins'],
+        #     'level': 'ERROR',
+        #     'propagate': True,
+        # },
+    }
+}
