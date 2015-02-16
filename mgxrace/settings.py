@@ -87,7 +87,7 @@ PASSWORD_HASHERS = (
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'racesow_celery',
+        'NAME': 'racesow',
         'USER': 'rs_django',
         'PASSWORD': cfg.get('db_pass'),
         'HOST': 'localhost',
