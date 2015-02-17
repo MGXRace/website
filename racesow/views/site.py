@@ -318,12 +318,11 @@ class PlayerDetails(View):
                 return render(request, 'racesow/player.html', context)
             db_filter.update({'player__id': player_id, 'time__isnull': False})
 
-            # try to get player object for other version based on simplified name
-            try:
-                player_other = Playerold.objects.get(simplified=player.simplified)
-                context.update({'player_other': player_other, 'playerdetails_other': 'rs:pdo', 'version_other': 'old'})
-            except Playerold.DoesNotExist:
-                pass
+            # try to get player object(s) for other version based on simplified name.
+            # Sort by points and take the first player when there is more than 1 result.
+            player_other_list = Playerold.objects.filter(simplified=player.simplified).order_by('-points')
+            if player_other_list:
+                context.update({'player_other': player_other_list[0], 'playerdetails_other': 'rs:pdo', 'version_other': 'old'})
 
             # translate table column to a database column
             db_order_l = [order]
@@ -356,12 +355,11 @@ class PlayerDetails(View):
                 return render(request, 'racesow/player.html', context)
             db_filter.update({'player__id': player_id, 'time__isnull': False})
 
-            # try to get player object for other version based on simplified name
-            try:
-                player_other = Player.objects.get(simplified=player.simplified)
-                context.update({'player_other': player_other, 'playerdetails_other': 'rs:pdn', 'version_other': 'new'})
-            except Player.DoesNotExist:
-                pass
+            # try to get player object(s) for other version based on simplified name.
+            # Sort by points and take the first player when there is more than 1 result.
+            player_other_list = Player.objects.filter(simplified=player.simplified).order_by('-points')
+            if player_other_list:
+                context.update({'player_other': player_other_list[0], 'playerdetails_other': 'rs:pdn', 'version_other': 'new'})
 
             # translate table column to a database column
             db_order_l = [order]
