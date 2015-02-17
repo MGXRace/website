@@ -51,6 +51,9 @@ class Player(models.Model):
     def playtime_formatted(self):
         return millis_to_str(int(self.playtime))
 
+    def get_points(self):
+        return self.points
+
 
 class Map(models.Model):
     """Racesow Old Map Model
