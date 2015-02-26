@@ -62,20 +62,10 @@ def username_with_html_colors(username):
     username = escape(username)
     username_colored = u''
 
-    # prefix default color code if needed
-    if not re.match('^\^[0-9].*', username):
-        username = DEFAULT_COLOR + username
-
-    color_split = filter(None, colorcode_regex.split(username))
-    # filter(None, p.split('^1Playe^5r^9!^5?'))
-    #   ['^1', 'Playe', '^5', 'r', '^9', '!', '^5', '?']
-    current_color = None
-    for k in color_split:
-        if current_color:
-            spanstr = u'<span style="color:{rgb}">{chars}</span>'.format(
-                rgb=colors[current_color], chars=k)
-            username_colored += spanstr
-            current_color = None
+    current_color = DEFAULT_COLOR
+    for k in filter(None, colorcode_regex.split(username)):  # ['Playe', '^5', 'r', '^9', '!', '^5', '?']
+        if not re.match('\^[0-9]', k):
+            username_colored += u'<span style="color:{rgb}">{chars}</span>'.format(rgb=colors[current_color], chars=k)
         else:
             current_color = k
     return username_colored
