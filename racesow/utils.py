@@ -63,7 +63,7 @@ def username_with_html_colors(username):
     username_colored = u''
 
     # prefix default color code if needed
-    if username[0] != u'^':
+    if not re.match('^\^[0-9].*', username):
         username = DEFAULT_COLOR + username
 
     color_split = filter(None, colorcode_regex.split(username))

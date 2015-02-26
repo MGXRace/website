@@ -5,6 +5,7 @@ Usage (debian) from the /website directory:
     python manage.py test racesow
 """
 import sys
+import traceback
 
 from django.test import TestCase
 
@@ -12,7 +13,7 @@ from .models import (
     Map,
     Player,
     Race)
-from racesow.utils import millis_to_str
+from racesow.utils import millis_to_str, username_with_html_colors
 
 
 class MapMethodTests(TestCase):
@@ -101,6 +102,69 @@ class UtilsTests(TestCase):
         str_ = "10:24.172"
         millis = 624172
         self.assertEqual(millis_to_str(millis), str_)
+
+
+class NicknameTests(TestCase):
+    def setUp(self):
+        pass
+
+    def test_nickname_1(self):
+        name = u'|^^|GallotoroDBS^7'
+        try:
+            username_with_html_colors(name)
+        except:
+            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+
+    def test_nickname_2(self):
+        name = u'^9|^1E^2R^3E^4N^^|^7'
+        try:
+            username_with_html_colors(name)
+        except:
+            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+
+    def test_nickname_3(self):
+        name = u'^^Z[e]X^^^7'
+        try:
+            username_with_html_colors(name)
+        except:
+            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+
+    def test_nickname_4(self):
+        name = u'^^.  ^4_  ^8.^7'
+        try:
+            username_with_html_colors(name)
+        except:
+            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+
+    def test_nickname_5(self):
+        name = u'^^Laser^5pistole^7'
+        try:
+            username_with_html_colors(name)
+        except:
+            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+
+    def test_nickname_6(self):
+        name = u'^^\'\'**^7'
+        try:
+            username_with_html_colors(name)
+        except:
+            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+
+    def test_nickname_7(self):
+        name = u'^^&#39;&#39;**^7'
+        try:
+            username_with_html_colors(name)
+        except:
+            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+
+
+    def test_nickname_8(self):
+        name = u'^9|^1E^2R^3E^4N^^|^7'
+        try:
+            username_with_html_colors(name)
+        except:
+            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+
 
 class RaceTests(TestCase):
 
