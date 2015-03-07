@@ -10,19 +10,34 @@
     {% url 'rs:pln' as pnew %}
     {% url 'rs:plo' as pold %}
 
-    <ul class="nav nav-tabs">
-        <li role="presentation" class="{% active_subpage request pnew %}"><a href="{{ pnew }}">{% version_string "new" %}</a></li>
-        <li role="presentation" class="{% active_subpage request pold %}"><a href="{{ pold }}">{% version_string "old" %}</a></li>
-    </ul>
+    {% if player %}
+        <ul class="nav nav-tabs">
+            {% if version == "new" %}
+                <li role="presentation" class="{% active_subpage request pnew %}">
+                    <a>{% version_string "new" %}</a>
+                </li>
+                {% if player_other %}
+                    <li role="presentation" class="{% active_subpage request pold %}">
+                        <a href="{% url playerdetails_other playerid=player_other.id %}">{% version_string "old" %}</a>
+                    </li>
+                {% endif %}
+            {% elif version == "old" %}
+                {% if player_other %}
+                    <li role="presentation" class="{% active_subpage request pnew %}">
+                        <a href="{% url playerdetails_other playerid=player_other.id %}">{% version_string "new" %}</a>
+                    </li>
+                {% endif %}
+                <li role="presentation" class="{% active_subpage request pold %}">
+                    <a>{% version_string "old" %}</a>
+                </li>
+            {% endif %}
+        </ul>
+    {% endif %}
 {% endblock navigation-sub %}
 
 {% block content %}{% spaceless %}
     {% if player %}
         <h3>Stats for player {{ player.htmlname|safe }}</h3>
-
-        {% if player_other %}
-            <p>Go to player in <a href="{% url playerdetails_other playerid=player_other.id %}">{% version_string version_other %}</a></p>
-        {% endif %}
 
         <p>
             Points: {{ player.get_points }} <br>
@@ -41,93 +56,99 @@
         {% endif %}
 
         {% if pmaps %}
-            <p>Displaying {{ pmaps|length }} / {{ pmaps.paginator.count }} maps.</p>
-        {% endif %}
-
-        {% include "racesow/elements/searchbox_playerdetail.html" %}
-
-        {% if pmaps %}
             {# Handle page stuff #}
-            {% with results=pmaps next_url=playerdetails %}
-                {% include "racesow/elements/pagination_playerdetail.html" %}
-            {% endwith %}
+            <div class="clearfix">
+                <div class="table-search pull-right">
+                    {% include "racesow/elements/searchbox_playerdetail.html" %}
+                </div>
 
-            {# Print the version- and player-specific maplist #}
-            <table class="table table-bordered table-striped table-hover table-condensed">
-            {% if version == "old" %}
-                {#  Name  Points-  Time  Onlinetime Date  #}
-                <tr>
-                    <th>
-                        {% format_header "name" order as h_points %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_points.url %}">{{ h_points.title }}</a>
-                    </th>
-                    <th>
-                        {% format_header "points" order as h_player %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_player.url %}">{{ h_player.title }}</a>
-                    </th>
-                    <th>
-                        {% format_header "time" order as h_time %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_time.url %}">{{ h_time.title }}</a>
-                    </th>
-                    <th>
-                        {% format_header "onlinetime" order as h_onlinetime %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_onlinetime.url %}">{{ h_onlinetime.title }}</a>
-                    </th>
-                    <th>
-                        {% format_header "date" order as h_date %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_date.url %}">{{ h_date.title }}</a>
-                    </th>
-                </tr>
-                {% for pmap in pmaps %}
+                {# Print the version- and player-specific maplist #}
+                <table class="table table-bordered table-striped table-hover table-condensed">
+                {% if version == "old" %}
+                    {#  Name  Points-  Time  Onlinetime Date  #}
                     <tr>
-                        <td>
-                            <a href={% url 'rs:mdo' pmap.map.id %}>{{ pmap.map.name }}</a>
-                        </td>
-                        <td>{{ pmap.points }}</td>
-                        <td>{{ pmap.time_formatted }}</td>
-                        <td>{{ pmap.playtime_formatted }}</td>
-                        <td>{{ pmap.get_date }}</td>
+                        <th>
+                            {% format_header "name" order as h_points %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_points.url %}">{{ h_points.title }}</a>
+                        </th>
+                        <th>
+                            {% format_header "points" order as h_player %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_player.url %}">{{ h_player.title }}</a>
+                        </th>
+                        <th>
+                            {% format_header "time" order as h_time %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_time.url %}">{{ h_time.title }}</a>
+                        </th>
+                        <th>
+                            {% format_header "onlinetime" order as h_onlinetime %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_onlinetime.url %}">{{ h_onlinetime.title }}</a>
+                        </th>
+                        <th>
+                            {% format_header "date" order as h_date %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_date.url %}">{{ h_date.title }}</a>
+                        </th>
                     </tr>
-                {% endfor %}
-            {% elif version == "new" %}
-                {#  Name  Points  Time  Playtime Date  #}
-                <tr>
-                    <th>
-                        {% format_header "name" order as h_points %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_points.url %}">{{ h_points.title }}</a>
-                    </th>
-                    <th>
-                        {% format_header "points" order as h_player %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_player.url %}">{{ h_player.title }}</a>
-                    </th>
-                    <th>
-                        {% format_header "time" order as h_time %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_time.url %}">{{ h_time.title }}</a>
-                    </th>
-                    <th>
-                        {% format_header "playtime" order as h_playtime %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a>
-                    </th>
-                    <th>
-                        {% format_header "date" order as h_date %}
-                        <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_date.url %}">{{ h_date.title }}</a>
-                    </th>
-                </tr>
-                {% for pmap in pmaps %}
+                    {% for pmap in pmaps %}
+                        <tr>
+                            <td>
+                                <a href={% url 'rs:mdo' pmap.map.id %}>{{ pmap.map.name }}</a>
+                            </td>
+                            <td>{{ pmap.points }}</td>
+                            <td>{{ pmap.time_formatted }}</td>
+                            <td>{{ pmap.playtime_formatted }}</td>
+                            <td>{{ pmap.get_date }}</td>
+                        </tr>
+                    {% endfor %}
+                {% elif version == "new" %}
+                    {#  Name  Points  Time  Playtime Date  #}
                     <tr>
-                        <td>
-                            <a href={% url 'rs:mdn' pmap.map.id %}>{{ pmap.map.name }}</a>
-                        </td>
-                        <td>{{ pmap.get_points }}</td>
-                        <td>{{ pmap.time_formatted }}</td>
-                        <td>{{ pmap.playtime_formatted }}</td>
-                        <td>{{ pmap.get_date }}</td>
+                        <th>
+                            {% format_header "name" order as h_points %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_points.url %}">{{ h_points.title }}</a>
+                        </th>
+                        <th>
+                            {% format_header "points" order as h_player %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_player.url %}">{{ h_player.title }}</a>
+                        </th>
+                        <th>
+                            {% format_header "time" order as h_time %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_time.url %}">{{ h_time.title }}</a>
+                        </th>
+                        <th>
+                            {% format_header "playtime" order as h_playtime %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_playtime.url %}">{{ h_playtime.title }}</a>
+                        </th>
+                        <th>
+                            {% format_header "date" order as h_date %}
+                            <a href="{% url playerdetails playerid=player.id page=1 q=query order=h_date.url %}">{{ h_date.title }}</a>
+                        </th>
                     </tr>
-                {% endfor %}
-            {% else %}
-                <p>Error: unexpected version '{{ version }}'.</p>
-            {% endif %}
-            </table>
+                    {% for pmap in pmaps %}
+                        <tr>
+                            <td>
+                                <a href={% url 'rs:mdn' pmap.map.id %}>{{ pmap.map.name }}</a>
+                            </td>
+                            <td>{{ pmap.get_points }}</td>
+                            <td>{{ pmap.time_formatted }}</td>
+                            <td>{{ pmap.playtime_formatted }}</td>
+                            <td>{{ pmap.get_date }}</td>
+                        </tr>
+                    {% endfor %}
+                {% else %}
+                    <p>Error: unexpected version '{{ version }}'.</p>
+                {% endif %}
+                </table>
+
+                <div class="pull-left">
+                    <p>Displaying {{ pmaps|length }} / {{ pmaps.paginator.count }} maps.</p>
+                </div>
+
+                <div class="pull-right">
+                    {% with results=pmaps next_url=playerdetails %}
+                        {% include "racesow/elements/pagination_playerdetail.html" %}
+                    {% endwith %}
+                </div>
+            </div>
         {% else %}
             <p>This player has not finished any maps yet.</p>
         {% endif %}
