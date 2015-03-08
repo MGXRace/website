@@ -1,20 +1,10 @@
 # methods for performing business logic; reduces complexity of views
-
-import platform
 import re
 
-from mgxrace import settings
 from racesow.models import Race
 from racesow.serializers import raceSerializer
 from racesow.utils import average, floats_differ
 
-
-if platform.system() == 'Linux':
-    from time import time as time
-elif platform.system() == 'Windows':
-    from time import clock as time
-else:
-    raise ImportError("Expecting linux or windows")
 
 MIN_REC_POINTS = 2
 MAX_REC_POINTS = 100
@@ -100,68 +90,59 @@ def _update_points(race, new_points, race_rank, reset):
 def map_evaluate_points(mid, reset):
     """Evaluates points awarded to races for map 'mid'.
 
-
     :param mid:     map to evaluate races of
     :param reset:   True if all points have been reset,
                     False if points should be updated in-place
     """
 
-    t_start = time()
-    num_completed_races = 0
-    try:
-        # get Race objects with times (sorted by racetime ascendingly)
-        completed_races = Race.objects.filter(map__id=mid, time__isnull=False).order_by('time')
-        num_completed_races = len(completed_races)
+    # get Race objects with times (sorted by racetime ascendingly)
+    completed_races = Race.objects.filter(map__id=mid, time__isnull=False).order_by('time')
+    num_completed_races = len(completed_races)
 
-        if num_completed_races == 0:
-            # no races to award points
-            return
+    if num_completed_races == 0:
+        # no races to award points
+        return
 
-        # get all Race objects (sorted by playtime descendingly)
-        all_races = Race.objects.filter(map__id=mid).order_by('-playtime').select_related('player')
+    # get all Race objects (sorted by playtime descendingly)
+    all_races = Race.objects.filter(map__id=mid).order_by('-playtime').select_related('player')
 
-        # determine points for first place
-        best_race = completed_races[0]
-        rec_points = map_get_rec_value(num_completed_races, all_races, best_race)
+    # determine points for first place
+    best_race = completed_races[0]
+    rec_points = map_get_rec_value(num_completed_races, all_races, best_race)
 
-        # update race/player points
-        _update_points(best_race, rec_points, 1, reset)
+    # update race/player points
+    _update_points(best_race, rec_points, 1, reset)
 
-        if num_completed_races == 1:
-            # no further races to award points
-            return
+    if num_completed_races == 1:
+        # no further races to award points
+        return
 
-        top20avg = average([race.time for race in completed_races[:20]])  # average of top 20 racetimes
+    top20avg = average([race.time for race in completed_races[:20]])  # average of top 20 racetimes
 
-        # cap 2nd place by predefined percentage, with a minimum points difference of 2
-        second_place_cap = min(rec_points - 2, rec_points * SECOND_PLACE_PERC)
-        x = second_place_cap * (7 / 9)
-        first_time = best_race.time
+    # cap 2nd place by predefined percentage, with a minimum points difference of 2
+    second_place_cap = min(rec_points - 2, rec_points * SECOND_PLACE_PERC)
+    x = second_place_cap * (7 / 9)
+    first_time = best_race.time
 
-        # compute points for 2nd place (capped to a certain percentage of 1st place)
-        second_place_points = min(second_place_cap, second_place_cap -
-                                  (x * ((completed_races[1].time - first_time) / (top20avg * 0.8))))
+    # compute points for 2nd place (capped to a certain percentage of 1st place)
+    second_place_points = min(second_place_cap, second_place_cap -
+                              (x * ((completed_races[1].time - first_time) / (top20avg * 0.8))))
 
-        # update race/player points
-        _update_points(completed_races[1], second_place_points, 2, reset)
+    # update race/player points
+    _update_points(completed_races[1], second_place_points, 2, reset)
 
-        if num_completed_races == 2:
-            # no further races to award points
-            return
+    if num_completed_races == 2:
+        # no further races to award points
+        return
 
-        # award points for 3rd, 4th... place by differentiating their times with first place, with a minimum of 2
-        # points to the previous time
-        points_above = second_place_points
-        for rank, race in enumerate(completed_races[2:]):
-            calculated_points = max(0, min(points_above - 2, second_place_cap -
-                                           (x * ((race.time - first_time) / (top20avg * 0.8)))))
-            _update_points(race, calculated_points, 3 + rank, reset)
-            points_above = calculated_points
-    finally:
-        calc_time = time() - t_start
-        if settings.DEBUG:
-            print "map_evaluate_points({}, reset={}) completed in {:.3f} seconds (num_completed_races {})".format(
-                mid, reset, calc_time, num_completed_races)
+    # award points for 3rd, 4th... place by differentiating their times with first place, with a minimum of 2
+    # points to the previous time
+    points_above = second_place_points
+    for rank, race in enumerate(completed_races[2:]):
+        calculated_points = max(0, min(points_above - 2, second_place_cap -
+                                       (x * ((race.time - first_time) / (top20avg * 0.8)))))
+        _update_points(race, calculated_points, 3 + rank, reset)
+        points_above = calculated_points
 
 
 def get_record(flt):
