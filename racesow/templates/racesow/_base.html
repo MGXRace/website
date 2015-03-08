@@ -17,6 +17,7 @@
     {% url 'rs:plo' as po %}
     {% url 'rs:mln' as mn %}
     {% url 'rs:mlo' as mo %}
+    {% url 'rs:prefs' as prefs %}
 
     <header class="page-head">
         <div class="page-title-bar">
@@ -81,6 +82,7 @@
                                 <li role="presentation" class="disabled"><a href="#" class="disabled">Serverlist</a></li>
                                 <li role="presentation" class="disabled"><a href="#" class="disabled">Forum</a></li>
                                 <li role="presentation" class="disabled"><a href="#" class="disabled">Help</a></li>
+                                <li role="presentation" class="{% active request prefs %}"><a href="{{ prefs }}">Preferences</a></li>
                             </ul>
                         </div>
                     </div>
@@ -99,10 +101,13 @@
 
     <footer class="page-foot">
         <small>Copyright &copy; MGX Race Development Team 2015. All rights reserved.</small>
+
+{#        {% include 'racesow/elements/timezone_dropdown.html' %}#}
     </footer>
 
     <script src="{% static 'racesow/js/jquery.min.js' %}"></script>
     <script src="{% static 'racesow/js/bootstrap.min.js' %}"></script>
     <script src="{% static 'racesow/js/navbar.js' %}"></script>
+    <script src="{% static 'racesow/js/misc.js' %}"></script>
 </body>
 </html>

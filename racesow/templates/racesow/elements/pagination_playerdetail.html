@@ -1,7 +1,8 @@
 {% if results.paginator.num_pages > 1 %}
     <nav>
         <ul class="pagination">
-            {% if results.has_previous %}
+            {% for page in pagebuttons %}
+                {% if results.number != page and forloop.first %}
                 <li>
                     <a href="{% url next_url playerid=player.id page=1 q=query order=order %}">
                         <i class="fa fa-fast-backward"></i>
@@ -12,15 +13,11 @@
                         <i class="fa fa-backward"></i>
                     </a>
                 </li>
-            {% endif %}
-
-            {% for page in results.paginator.page_range %}
+                {% endif %}
                 <li {% if results.number == page %} class="active" {% endif %}>
                     <a href="{% url next_url playerid=player.id page=page q=query order=order %}">{{ page }}</a>
                 </li>
-            {% endfor %}
-
-            {% if results.has_next %}
+                {% if results.number != page and forloop.last %}
                 <li>
                     <a href="{% url next_url playerid=player.id page=results.next_page_number q=query order=order %}">
                         <i class="fa fa-forward"></i>
@@ -31,7 +28,8 @@
                         <i class="fa fa-fast-forward"></i>
                     </a>
                 </li>
-            {% endif %}
+                {% endif %}
+            {% endfor %}
         </ul>
     </nav>
 {% endif %}

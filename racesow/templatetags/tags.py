@@ -1,7 +1,26 @@
 from django import template
+from django.utils import timezone
+from django.utils.formats import date_format
+import pytz
 from django.template import defaultfilters
 
 register = template.Library()
+
+RANK_CLASS = {1: 'medal-gold', 2: 'medal-silver', 3: 'medal-bronze'}  # css color classes for top 3 ranks
+RANK_NAME = {1: 'Gold', 2: 'Silver', 3: 'Bronze'}
+
+
+@register.assignment_tag
+def get_timezones():
+    return {'timezones': pytz.common_timezones}
+
+
+@register.simple_tag
+def get_time():
+    """
+    Returns the local time for the user. Makes use of the user's preferred timezone if set.
+    """
+    return date_format(timezone.localtime(timezone.now()), 'DATE_FORMAT', use_l10n=False)
 
 
 @register.simple_tag
@@ -11,6 +30,41 @@ def version_string(shortname):
     if shortname == 'old':
         return "Old version (1.0)"
     return "Undefined"
+
+
+@register.simple_tag
+def rank_to_class(rank):
+    return RANK_CLASS.get(rank, '')
+
+
+@register.simple_tag
+def rank_to_name(rank):
+    return RANK_NAME.get(rank, '')
+
+
+@register.simple_tag
+def time_passed_since(date):
+    """
+    Returns how 'long ago' a certain event happened. Currently used to print how long ago a player made a new record on
+    a map.
+    """
+    delta = timezone.now() - date
+    if delta.days:
+        if delta.days > 30:
+            months = float(delta.days) / 30.0
+            return "{} {} ago".format(int(months), "month" if months < 2.0 else "months")
+        if delta.days > 7:
+            weeks = float(delta.days) / 7.0
+            return "{} {} ago".format(int(weeks), "week" if weeks < 2.0 else "weeks")
+        return "{} {} ago".format(delta.days, "day" if delta.days == 1 else "days")
+    hours = float(delta.seconds) / 3600.0
+    if hours >= 1.0:
+        return "{} {} ago".format(int(hours), "hour" if hours < 2.0 else "hours")
+    minutes = float(delta.seconds) / 60.0
+    if minutes >= 1.0:
+        return "{} {} ago".format(int(minutes), "minute" if minutes < 2.0 else "minutes")
+    seconds = max(1, delta.seconds)
+    return "{} {} ago".format(seconds, "second" if seconds == 1 else "seconds")
 
 
 @register.assignment_tag

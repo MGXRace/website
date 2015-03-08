@@ -1,19 +1,23 @@
-import logging
-
-import celery
 from django.conf import settings
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import Http404, HttpResponse
 from django.shortcuts import render, redirect
 from django.views.generic import View
+from django.utils import timezone
+import pytz
+from racesow import services
 
 from racesow.models import Map, Race, Player
 from racesowold.models import Map as Mapold, PlayerMap, Player as Playerold
 
 
-__author__ = 'Mark'
+PAGE_LIMIT = 20  # number of results per page
+BUTTONS_PER_PAGE = 5  # the max number of pagebuttons we want to allow
 
-PAGE_LIMIT = 20
+
+##################
+# Helper methods #
+##################
 
 
 def get_page(objects, page):
@@ -30,11 +34,58 @@ def get_page(objects, page):
     return objects_page
 
 
+def get_pagebuttons_for_page(objects, page):
+    """
+    Returns a list of page numbers for which we want to have pagebuttons shown.
+    """
+    paginator = Paginator(objects, PAGE_LIMIT)
+    page = int(page)
+    if paginator.num_pages <= BUTTONS_PER_PAGE:
+        return range(1, paginator.num_pages + 1)
+    if page < 3:  # show first 5 pagebuttons when viewing one of the first 2 pages
+        return range(1, BUTTONS_PER_PAGE + 1)
+    if page > (paginator.num_pages - 3):  # show last 5 pagebuttons when viewing one of last 2 pages
+        return range(paginator.num_pages - BUTTONS_PER_PAGE + 1, paginator.num_pages + 1)
+    return range(max(1, page - 2), min(paginator.num_pages + 1, page + 3))
+
+
+#####################
+# Class-based views #
+#####################
+
+
 class Index(View):
     def get(self, request):
         context = {
-            'races': Race.objects.filter(time__isnull=False).order_by('-created').select_related('map', 'player')[:20]}
+            'records': Race.objects.filter(time__isnull=False, rank__range=[1, 3])
+                           .order_by('-created').select_related('map', 'player')[:10]
+        }
         return render(request, 'racesow/home.html', context)
+
+
+class SetTimezone(View):
+    def get(self, request, **kwargs):
+        return redirect('rs:home')
+
+    def post(self, request, **kwargs):
+        # store posted timezone in user session object and redirect to originating page
+        request.session['django_timezone'] = request.POST['timezone']
+        return redirect(request.POST['next'])
+
+
+class Preferences(View):
+    def get(self, request):
+        context = {'timezones': pytz.common_timezones}
+        return render(request, 'racesow/preferences.html', context)
+
+    def post(self, request):
+        context = {'timezones': pytz.common_timezones}
+        user_timezone = request.POST.get('timezone', None)
+        if user_timezone:
+            request.session['django_timezone'] = user_timezone
+            timezone.activate(pytz.timezone(user_timezone))
+            context['feedback'] = 'Timezone has been set to {}'.format(request.session['django_timezone'])
+        return render(request, 'racesow/preferences.html', context)
 
 
 class MapList(View):
@@ -102,7 +153,13 @@ class MapList(View):
             # specify the url to put in <form> href
             context.update({'form_url': 'rs:mlo'})
 
-        context.update({'maps': get_page(maps_list, page), 'maplist': maplist_url, 'order': order, 'query': q})
+        context.update({
+            'maps': get_page(maps_list, page),  # store paginated objects in template context
+            'maplist': maplist_url,  # version dependent url (used in table headers for sorting, page buttons, etc.)
+            'order': order,  # active object sort method
+            'query': q,  # search query (if any)
+            'pagebuttons': get_pagebuttons_for_page(maps_list, page)  # list of pagenumbers for whom we need buttons
+        })
         return render(request, 'racesow/maps.html', context)
 
 
@@ -155,7 +212,22 @@ class MapDetails(View):
                 db_order = order.replace('date', 'created')
 
             races_list = Race.objects.filter(map__id=map_.id).exclude(time__isnull=True).order_by(db_order).select_related('player')
+
+            # celery last computation date
+            context['last_run'] = map_.last_computation
+
+            # celery next computation date
+            if map_.compute_points:
+                context['next_run'] = services.get_next_computation_date()
+
+            # create URL to .pk3 file
+            if map_.pk3file:
+                pk3file = str(map_.pk3file)
+                if "maps/" in pk3file:
+                    context['map_pk3'] = settings.MAP_PK3_URL + pk3file[5:]
         else:
+            # old version (1.0)
+
             # get map object
             try:
                 map_ = Mapold.objects.get(pk=map_id)
@@ -181,7 +253,17 @@ class MapDetails(View):
             races_list = PlayerMap.objects.filter(map__id=map_.id)\
                 .exclude(time__isnull=True).order_by(db_order).select_related('player')
 
-        context.update({'map': map_, 'mapdetails': mapdetails_url, 'races': get_page(races_list, page), 'order': order})
+            # create URL to .pk3 file
+            if map_.file:
+                context['map_pk3'] = settings.MAP_PK3_URL + map_.file
+
+        context.update({
+            'map': map_,
+            'mapdetails': mapdetails_url,
+            'races': get_page(races_list, page),
+            'order': order,
+            'pagebuttons': get_pagebuttons_for_page(races_list, page)  # list of pagenumbers for whom we need buttons
+        })
         return render(request, 'racesow/map.html', context)
 
 
@@ -261,8 +343,13 @@ class PlayerList(View):
             # specify the url to put in <form> href
             context.update({'form_url': 'rs:plo'})
 
-        context.update(
-            {'players': get_page(player_list, page), 'playerlist': playerlist_url, 'order': order, 'query': q})
+        context.update({
+            'players': get_page(player_list, page),
+            'playerlist': playerlist_url,
+            'order': order,
+            'query': q,
+            'pagebuttons': get_pagebuttons_for_page(player_list, page)  # list of pagenumbers for whom we need buttons
+        })
         return render(request, 'racesow/players.html', context)
 
 
@@ -387,6 +474,12 @@ class PlayerDetails(View):
             # specify the url to put in <form> href
             context.update({'form_url': 'rs:pdo'})
 
-        context.update({'player': player, 'pmaps': get_page(pmaps_list, page), 'playerdetails': playerdetails_url,
-                        'order': order, 'query': q})
+        context.update({
+            'player': player,
+            'pmaps': get_page(pmaps_list, page),
+            'playerdetails': playerdetails_url,
+            'order': order,
+            'query': q,
+            'pagebuttons': get_pagebuttons_for_page(pmaps_list, page)  # list of pagenumbers for whom we need buttons
+        })
         return render(request, 'racesow/player.html', context)

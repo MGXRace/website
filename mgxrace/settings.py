@@ -69,7 +69,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'racesow.middleware.ServerAuthenticationMiddleware'
+    'racesow.middleware.ServerAuthenticationMiddleware',
+    'racesow.middleware.TimezoneMiddleware',
 )
 
 ROOT_URLCONF = 'mgxrace.urls'
@@ -105,16 +106,19 @@ USE_I18N = True
 
 USE_L10N = True
 
+DATE_FORMAT = 'Y-m-d H:i:s'  # 2015-02-25 03:16:57
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.6/howto/static-files/
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.environ['HOME'] + '/static/'
+MAP_PK3_URL = 'http://pk3.mgxrace.net/racesow/'
 
 # added for
 TEMPLATE_CONTEXT_PROCESSORS = {
     "django.core.context_processors.request",
+    "django.core.context_processors.tz",
     "django.contrib.auth.context_processors.auth",
 }
 

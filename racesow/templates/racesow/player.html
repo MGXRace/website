@@ -6,61 +6,75 @@
     {{ block.super }} - Playerstats
 {% endblock title %}
 
-{% block navigation-sub %}
-    {% url 'rs:pln' as pnew %}
-    {% url 'rs:plo' as pold %}
-
-    {% if player %}
-        <ul class="nav nav-tabs">
-            {% if version == "new" %}
-                <li role="presentation" class="{% active_subpage request pnew %}">
-                    <a>{% version_string "new" %}</a>
-                </li>
-                {% if player_other %}
-                    <li role="presentation" class="{% active_subpage request pold %}">
-                        <a href="{% url playerdetails_other playerid=player_other.id %}">{% version_string "old" %}</a>
-                    </li>
-                {% endif %}
-            {% elif version == "old" %}
-                {% if player_other %}
-                    <li role="presentation" class="{% active_subpage request pnew %}">
-                        <a href="{% url playerdetails_other playerid=player_other.id %}">{% version_string "new" %}</a>
-                    </li>
-                {% endif %}
-                <li role="presentation" class="{% active_subpage request pold %}">
-                    <a>{% version_string "old" %}</a>
-                </li>
-            {% endif %}
-        </ul>
-    {% endif %}
-{% endblock navigation-sub %}
-
 {% block content %}{% spaceless %}
     {% if player %}
-        <h3>Stats for player {{ player.htmlname|safe }}</h3>
+        <div class="page-header">
+            <h3 id="title">Stats for player {{ player.htmlname|safe }}
+                {% if player_other %}
+                    <span class="pull-right">
+                    <a class="btn btn-outline" href="{% url playerdetails_other playerid=player_other.id %}"
+                       data-toggle="tooltip" title="Stats for this map in an other racesow version"
+                       data-placement="bottom">
+                        {% version_string version_other %}
+                    </a>
+                </span>
+                {% endif %}
+                <span class="pull-right">
+                    {% include "racesow/elements/timezone_dropdown.html" %}
+                </span>
+            </h3>
+        </div>
 
-        <p>
-            Points: {{ player.get_points }} <br>
-            Skill: {{ player.skill|floatformat:2 }} <br>
-            Races: {{ player.races }} <br>
-            Maps played: {{ player.maps }} <br>
-            Maps finished: {{ player.pmaps }}
-        </p>
+        <div class="player-info">
+            <div class="player-info-table">
+                <table class="table table-condensed table-bordered table-striped">
+                    <tbody>
+                    <tr>
+                        <td class="info-name">Points</td>
+                        <td class="info-data">{{ player.get_points }}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-name">Skill</td>
+                        <td class="info-data">{{ player.skill|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-name">Races</td>
+                        <td class="info-data">{{ player.races }}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-name">Maps played</td>
+                        <td class="info-data">{{ player.maps }}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-name">Maps finished</td>
+                        <td class="info-data">{{ player.pmaps }}</td>
+                    </tr>
+                    {% if medals %}
+                        <tr>
+                            <td class="info-name"><span class="medal-gold">Gold</span></td>
+                            <td >{{ medals.gold }}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-name"><span class="medal-silver">Silver</span></td>
+                            <td class="info-data">{{ medals.silver }}</td>
+                        </tr>
+                        <tr>
+                            <td class="info-name"><span class="medal-bronze">Bronze</span></td>
+                            <td class="info-data">{{ medals.bronze }}</td>
+                        </tr>
+                    {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-        {% if medals %}
-            <p>
-                <span class="medal-gold">Gold:</span> {{ medals.gold }}<br>
-                <span class="medal-silver">Silver:</span> {{ medals.silver }}<br>
-                <span class="medal-bronze">Bronze:</span> {{ medals.bronze }}
-            </p>
-        {% endif %}
-
-        {% if pmaps %}
-            {# Handle page stuff #}
+        <div class="race-data">
             <div class="clearfix">
                 <div class="table-search pull-right">
                     {% include "racesow/elements/searchbox_playerdetail.html" %}
                 </div>
+        {% if pmaps %}
+            {# Handle page stuff #}
 
                 {# Print the version- and player-specific maplist #}
                 <table class="table table-bordered table-striped table-hover table-condensed">
@@ -96,7 +110,7 @@
                             <td>{{ pmap.points }}</td>
                             <td>{{ pmap.time_formatted }}</td>
                             <td>{{ pmap.playtime_formatted }}</td>
-                            <td>{{ pmap.get_date }}</td>
+                            <td>{{ pmap.created|date }}</td>
                         </tr>
                     {% endfor %}
                 {% elif version == "new" %}
@@ -131,7 +145,7 @@
                             <td>{{ pmap.get_points }}</td>
                             <td>{{ pmap.time_formatted }}</td>
                             <td>{{ pmap.playtime_formatted }}</td>
-                            <td>{{ pmap.get_date }}</td>
+                            <td>{{ pmap.created|date }}</td>
                         </tr>
                     {% endfor %}
                 {% else %}
@@ -150,8 +164,13 @@
                 </div>
             </div>
         {% else %}
-            <p>This player has not finished any maps yet.</p>
+            {% if query %}
+                <p>This player has not played any maps matching '{{ query }}'.</p>
+            {% else %}
+                <p>This player has not finished any maps yet.</p>
+            {% endif %}
         {% endif %}
+        </div>
     {% else %}
         <p>No such player.</p>
     {% endif %}

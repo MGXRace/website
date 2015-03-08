@@ -1,10 +1,12 @@
 # methods for performing business logic; reduces complexity of views
 import re
+import datetime
+
+from djcelery.models import PeriodicTask, IntervalSchedule, TaskState
 
 from racesow.models import Race
 from racesow.serializers import raceSerializer
 from racesow.utils import average, floats_differ
-
 
 MIN_REC_POINTS = 2
 MAX_REC_POINTS = 100
@@ -165,3 +167,28 @@ def get_record(flt):
 def is_default_username(username):
     # returns True if username is like 'player', 'player(1)' etc.
     return _playerre.match(username)
+
+
+def get_next_computation_date():
+    """
+    Returns the next execution of racesow.tasks.recompute_update_maps according to its interval schedule
+
+    :return: None|str
+    """
+    last_task = TaskState.objects.filter(name='racesow.tasks.recompute_updated_maps').order_by('-tstamp')
+    if not last_task:
+        return None
+
+    last_task = last_task[0]
+    base_time = last_task.tstamp
+    try:
+        ptask = PeriodicTask.objects.get(task='racesow.tasks.recompute_updated_maps')
+        try:
+            int_sched = IntervalSchedule.objects.get(pk=ptask.interval_id)
+            time_delta = datetime.timedelta(**{int_sched.period: int_sched.every})
+            return base_time + time_delta
+        except IntervalSchedule.DoesNotExist:
+            pass
+    except PeriodicTask.DoesNotExist:
+        pass
+    return None

@@ -10,6 +10,9 @@ urlpatterns = patterns(
     '',
     url(r'^$', website.Index.as_view(), name='home'),
 
+    url(r'^timezone$', website.SetTimezone.as_view(), name='tz'),
+    url(r'^preferences$', website.Preferences.as_view(), name='prefs'),
+
     # details of a single player (pdn = Player Details New, pdn = Player Details Old)
     url(r'^players/detail/(?P<playerid>\d+)[/]*$', website.PlayerDetails.as_view(), {'version': 'new'}, name='pdn'),
     url(r'^players/detail/(?P<playerid>\d+)/(?P<order>[-\w]+)/(?P<page>\d+)$', website.PlayerDetails.as_view(), {'version': 'new'}, name='pdn2'),

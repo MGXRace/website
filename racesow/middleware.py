@@ -1,3 +1,5 @@
+from django.utils import timezone
+import pytz
 from .models import Server
 from .utils import authenticate
 from django.core.exceptions import PermissionDenied
@@ -35,3 +37,15 @@ class ServerAuthenticationMiddleware(object):
 
     def process_response(self, request, response):
         return response
+
+
+class TimezoneMiddleware(object):
+    def process_request(self, request):
+        tzname = request.session.get('django_timezone')
+        if tzname:
+            try:
+                timezone.activate(pytz.timezone(tzname))
+            except:
+                timezone.deactivate()
+        else:
+            timezone.deactivate()

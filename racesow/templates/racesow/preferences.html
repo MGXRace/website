@@ -1,0 +1,30 @@
+{% extends "racesow/_base.html" %}
+{% load tags %}
+{% load humanize %}
+
+{% block title %}
+    {{ block.super }} - Preferences
+{% endblock title %}
+
+{% block content %}
+    {% if feedback %}
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span
+                    aria-hidden="true">&times;</span></button>
+            {{ feedback }}
+        </div>
+    {% endif %}
+
+    <h2>Timezone</h2>
+    <p>Select your corresponding timezone to adjust timestamps to your location.</p>
+    <form action="{% url 'rs:prefs' %}" method="POST">
+        {% csrf_token %}
+        <label for="timezone">Select your time zone:</label>
+        <select name="timezone">
+            {% for tz in timezones %}
+                <option value="{{ tz }}"{% if tz == TIME_ZONE %} selected="selected"{% endif %}>{{ tz }}</option>
+            {% endfor %}
+        </select>
+        <input type="submit" value="Set"/>
+    </form>
+{% endblock content %}

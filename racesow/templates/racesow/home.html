@@ -23,21 +23,24 @@
         </li>
     </ul>
 
-    <h4>Last 20 races</h4>
+    <h4>Last 10 records</h4>
     <table class="table table-bordered table-striped table-hover table-condensed">
         <tr>
-            <th>Player</th>
             <th>Map</th>
+            <th>Player</th>
             <th>Time</th>
-            <th>Date</th>
+            <th>Type</th>
+            <th><abbr title="Based on timezone {{ TIME_ZONE }}. Change in preferences">Date</abbr></th>
         </tr>
-        {% if races %}
-            {% for race in races %}
+        {% if records %}
+        {% load tags %}
+            {% for record in records %}
                 <tr>
-                    <td class="player-name">{{ race.player.htmlname|safe }}</td>
-                    <td>{{ race.map.name }}</td>
-                    <td>{{ race.time_formatted }}</td>
-                    <td>{{ race.last_played }}</td>
+                    <td><a href="{% url 'rs:mdn' record.map.id %}">{{ record.map.name }}</a></td>
+                    <td class="player-name"><a href="{% url 'rs:pdn' record.player.id %}">{{ record.player.htmlname|safe }}</a></td>
+                    <td>{{ record.time_formatted }}</td>
+                    <td><span class="{% rank_to_class record.rank %}">{% rank_to_name record.rank %}</span></td>
+                    <td><span data-toggle="tooltip" title="{{ record.last_played|date }}" data-placement="right">{% time_passed_since record.last_played %}</span></td>
                 </tr>
             {% endfor %}
         {% endif %}

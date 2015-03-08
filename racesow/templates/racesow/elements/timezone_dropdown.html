@@ -1,0 +1,42 @@
+{% load tags %}
+
+<form id="tz-form" action="{% url 'rs:tz' %}" method="POST">
+    {% csrf_token %}
+    <div class="btn-group dropdown">
+        <button type="button" class="btn btn-outline current-tz" data-toggle="tooltip"
+                title="Your local time: {% get_time %}. Current timezone: {{ TIME_ZONE }}" data-placement="bottom">Change timezone</button>
+        <button type="button" class="btn btn-outline dropdown-toggle" data-toggle="dropdown"
+                aria-expanded="false">
+            <span class="caret"></span>
+            <span class="sr-only">Timezone selection</span>
+        </button>
+        <ul class="dropdown-menu">
+            <!-- static non-scrollable menu header -->
+            <li class="disabled"><a href="#"><b>Select a timezone</b></a>
+            </li>
+            <li>
+                <!-- Here we have our dropdown-menu wrapper so we don't mess with the layout of the outer dropdown-menu -->
+                <ul class="dropdown-menu scroll-menu">
+                    {% get_timezones as tzz %}
+                    {% for tz in tzz.timezones %}
+                        {% if tz == TIME_ZONE %}
+                            <li class="active"><a href="#">{{ tz }}</a></li>
+                        {% else %}
+                            <li><a href="#">{{ tz }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </li>
+            <!-- static non-scrollable menu footer -->
+            <li class="disabled">
+                <a href="#">
+                    <span class="glyphicon glyphicon-chevron-up pull-left"></span>
+                    <span class="glyphicon glyphicon-chevron-up pull-right"></span>
+                </a>
+            </li>
+        </ul>
+    </div>
+
+    <input type="hidden" name="next" value="{{ request.path }}"/>
+    <input type="hidden" id="tz" name="timezone" value="{{ TIME_ZONE }}"/>
+</form>
