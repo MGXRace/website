@@ -14,20 +14,6 @@ logger = get_task_logger(__name__)
 
 
 @shared_task
-def update_oneliner(mapname, new_oneliner):
-    logger.info("update_oneliner {} {} started, will complete in 10 seconds".format(mapname, new_oneliner))
-    time.sleep(10)
-    try:
-        map_ = Map.objects.get(name=mapname)
-        old = map_.oneliner
-        map_.oneliner = new_oneliner
-        map_.save()
-        logger.info("update_oneliner {} updated oneliner from [{}] to [{}]!".format(mapname, old, new_oneliner))
-    except Map.DoesNotExist:
-        logger.info("update_oneliner {} {} failed!".format(mapname, new_oneliner))
-
-
-@shared_task
 def force_recompute_all():
     logger.info("force_recompute_all starting")
 
@@ -52,7 +38,7 @@ def force_recompute_all():
     # Check for races made during this task.
     # This is necessary to prevent races from staying at -1 points for possibly long periods of time
     while True:
-        new_races = Race.objects.filter(points=-1000)
+        new_races = Race.objects.filter(time__isnull=False, points=-1000)
         new_races.query.group_by = ['map_id']
 
         if not new_races:
