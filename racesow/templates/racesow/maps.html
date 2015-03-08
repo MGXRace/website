@@ -9,13 +9,11 @@
 {% block content %}{% spaceless %}
     <h1>Maps</h1>
 
-    {% if maps %}
-        {# Handle page stuff #}
-        <div class="clearfix">
-            <div class="table-search pull-right">
-                {% include "racesow/elements/searchbox.html" with placeholder="Map" %}
-            </div>
-
+    <div class="clearfix">
+        <div class="table-search pull-right">
+            {% include "racesow/elements/searchbox.html" with placeholder="Map" %}
+        </div>
+        {% if maps %}
             {# Print the version-specific maplist #}
             <table class="table table-bordered table-striped table-hover table-condensed">
             {% if version == "old" %}
@@ -48,7 +46,7 @@
                         <td>
                             <a href={% url 'rs:mdo' map.id %}>{{ map.name }}</a>
                         </td>
-                        <td>{{ map.get_weapons|safe }}</td>
+                        <td class="weapon">{{ map.get_weapons|safe }}</td>
                         <td>{{ map.races }}</td>
                         <td>{{ map.playtime_formatted }}</td>
                         <td>pk3</td>
@@ -102,10 +100,14 @@
                     {% include "racesow/elements/pagination.html" %}
                 {% endwith %}
             </div>
-        </div>
-    {% else %}
-        <p>No maps found for version '{{ version }}'.</p>
-    {% endif %}
+        {% else %}
+            {% if query %}
+                <p>No maps found.</p>
+            {% else %}
+                <p>No maps found for version '{{ version }}'.</p>
+            {% endif %}
+        {% endif %}
+    </div>
 {% endspaceless %}{% endblock content %}
 
 {% if debug and notice %}
