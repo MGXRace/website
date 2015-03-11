@@ -58,7 +58,7 @@ class Index(View):
     def get(self, request):
         context = {
             'records': Race.objects.filter(time__isnull=False, rank__range=[1, 3])
-                           .order_by('-created').select_related('map', 'player')[:10]
+                           .order_by('-last_played').select_related('map', 'player')[:10]
         }
         return render(request, 'racesow/home.html', context)
 
