@@ -43,7 +43,7 @@
                     <td class="player-name"><a href="{% url 'rs:pdn' record.player.id %}">{{ record.player.htmlname|safe }}</a></td>
                     <td>{{ record.time_formatted }}</td>
                     <td><span class="{% rank_to_class record.rank %}">{% rank_to_name record.rank %}</span></td>
-                    <td><span data-toggle="tooltip" title="{{ record.last_played|date }}" data-placement="right">{% time_passed_since record.last_played %}</span></td>
+                    <td><span data-toggle="tooltip" title="{{ record.created|date }}" data-placement="right">{% time_passed_since record.created %}</span></td>
                 </tr>
             {% endfor %}
         {% endif %}
