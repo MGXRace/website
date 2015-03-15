@@ -69,11 +69,11 @@
         </div>
 
         <div class="race-data">
+        {% if pmaps %}
             <div class="clearfix">
                 <div class="table-search pull-right">
                     {% include "racesow/elements/searchbox_playerdetail.html" %}
                 </div>
-        {% if pmaps %}
             {# Handle page stuff #}
 
                 {# Print the version- and player-specific maplist #}
