@@ -181,14 +181,20 @@ def get_next_computation_date():
 
     last_task = last_task[0]
     base_time = last_task.tstamp
+    soonest = None
     try:
-        ptask = PeriodicTask.objects.get(task='racesow.tasks.recompute_updated_maps')
-        try:
-            int_sched = IntervalSchedule.objects.get(pk=ptask.interval_id)
-            time_delta = datetime.timedelta(**{int_sched.period: int_sched.every})
-            return base_time + time_delta
-        except IntervalSchedule.DoesNotExist:
-            pass
+        # find all PeriodicTask entries that contain this task
+        for ptask in PeriodicTask.objects.filter(task='racesow.tasks.recompute_updated_maps'):
+            try:
+                int_sched = IntervalSchedule.objects.get(pk=ptask.interval_id)
+                time_delta = datetime.timedelta(**{int_sched.period: int_sched.every})
+                next_run = base_time + time_delta
+
+                # remember the soonest execution
+                if not soonest or next_run < soonest:
+                    soonest = next_run
+            except IntervalSchedule.DoesNotExist:
+                pass
     except PeriodicTask.DoesNotExist:
         pass
-    return None
+    return soonest
