@@ -468,7 +468,7 @@ class PlayerDetails(View):
                 'bronze': len(PlayerMap.objects.filter(player__id=player.id, points=31))}
             })
 
-            player.skill = float(player.points) / player.maps
+            player.skill = float(player.points) / player.maps if player.maps else 0
             player.pmaps = len(pmaps_list)
 
             # specify the url to put in <form> href
