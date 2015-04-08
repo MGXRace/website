@@ -1,10 +1,14 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import patterns, url, include
+from rest_framework import routers
 
 from racesow.views.default import NotFound
 
 import racesow.views.api as api
 import racesow.views.site as website
 import racesow.views.wmm as wmm
+
+router = routers.DefaultRouter()
+router.register(r'players', api.PlayerViewSet)
 
 urlpatterns = patterns(
     '',
@@ -57,5 +61,10 @@ urlpatterns = patterns(
     (r'^api/nick/([A-Za-z0-9-_=]+)', api.APINick.as_view()),
     (r'^api/race[/]*$', api.APIRace.as_view()),
     (r'^api/raceall$', api.APIRaceAll.as_view()),
+
+    # Temporary place for restframework api
+    url(r'^drf/', include(router.urls)),
+    url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+
     (r'.+', NotFound.as_view()),
 )

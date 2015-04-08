@@ -1,4 +1,23 @@
 from django.utils import timezone
+from rest_framework import serializers, viewsets
+from racesow.models import Player
+
+
+class PlayerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Player
+        fields = (
+            'id',
+            'username',
+            'admin',
+            'name',
+            'simplified',
+            'playtime',
+            'races',
+            'maps',
+            'maps_finished',
+            'points',
+        )
 
 
 def playerSerializer(player):

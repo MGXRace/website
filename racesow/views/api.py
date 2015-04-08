@@ -10,6 +10,9 @@ from django.http import HttpResponse, Http404
 from django.utils import timezone
 from django.views.generic import View
 
+from rest_framework import viewsets
+from racesow.serializers import PlayerSerializer
+
 from racesow.models import Map, Tag, Player, Race, RaceHistory, Checkpoint
 from racesow.serializers import mapSerializer, playerSerializer, raceSerializer
 from racesow.services import get_record, is_default_username
@@ -19,6 +22,11 @@ from racesowold.serializers import raceSerializer as raceoldSerializer, playerSe
 
 
 __author__ = 'Mark'
+
+
+class PlayerViewSet(viewsets.ModelViewSet):
+    queryset = Player.objects.all()
+    serializer_class = PlayerSerializer
 
 
 class APIMapList(View):
