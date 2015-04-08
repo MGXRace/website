@@ -104,12 +104,9 @@ def millis_to_str(milli):
     """Formats milliseconds to HH:MM:SS format
 
     Omits hours or minutes if they are 00"""
-    hours = milli / 3600000
-    milli -= hours * 3600000
-    mins = milli / 60000
-    milli -= mins * 60000
-    sec = milli / 1000
-    milli -= sec * 1000
+    hours, milli = milli // 3600000, milli % 3600000
+    mins, milli = milli // 60000, milli % 60000
+    sec, milli = milli // 1000, milli % 1000
 
     if hours == 0:
         str_hours = ""
