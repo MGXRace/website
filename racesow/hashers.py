@@ -25,12 +25,12 @@ class SHA256Hasher(BasePasswordHasher):
         """Encode the password for DB storage"""
         assert salt == ''
 
-        h = self.digest(password)
+        h = self.digest(password.encode('utf-8'))
         encoded = h.digest()
         for i in range(1, self.iterations):
             h = self.digest(encoded)
             encoded = h.digest()
-        encoded = base64.b64encode(encoded, '-_')
+        encoded = base64.b64encode(encoded, b'-_')
 
         return '{}$${}'.format(self.algorithm, encoded)
 
