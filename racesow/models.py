@@ -15,7 +15,7 @@ class Tag(models.Model):
     Model Fields:
         name (str): Name of the tag
     """
-    name = models.CharField(max_length=15)
+    name = models.CharField(max_length=15, unique=True)
 
     def __unicode__(self):
         return self.name
