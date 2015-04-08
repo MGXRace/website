@@ -115,10 +115,10 @@ USE_L10N = True
 DATE_FORMAT = 'Y-m-d H:i:s'  # 2015-02-25 03:16:57
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.6/howto/static-files/
+# https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.environ['HOME'] + '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 MAP_PK3_URL = 'http://pk3.mgxrace.net/racesow/'
 
 # added for
