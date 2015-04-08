@@ -14,7 +14,9 @@ from rest_framework import viewsets
 from racesow.serializers import (
     PlayerSerializer,
     MapSerializer,
-    TagSerializer
+    TagSerializer,
+    RaceSerializer,
+    CheckpointSerializer,
 )
 
 from racesow.models import Map, Tag, Player, Race, RaceHistory, Checkpoint
@@ -41,6 +43,16 @@ class MapViewSet(viewsets.ModelViewSet):
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
+
+
+class RaceViewSet(viewsets.ModelViewSet):
+    queryset = Race.objects.all()
+    serializer_class = RaceSerializer
+
+
+class CheckpointViewSet(viewsets.ModelViewSet):
+    queryset = Checkpoint.objects.all()
+    serializer_class = CheckpointSerializer
 
 
 class APIMapList(View):

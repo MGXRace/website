@@ -11,6 +11,8 @@ router = routers.DefaultRouter()
 router.register(r'players', api.PlayerViewSet)
 router.register(r'maps', api.MapViewSet)
 router.register(r'tags', api.TagViewSet)
+router.register(r'races', api.RaceViewSet)
+router.register(r'checkpoints', api.CheckpointViewSet)
 
 urlpatterns = patterns(
     '',

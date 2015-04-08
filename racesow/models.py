@@ -276,7 +276,7 @@ class Checkpoint(models.Model):
         number (int): Number of the checkpoint
         time (int): Time of the race that the checkpoint was touched
     """
-    race = models.ForeignKey(Race)
+    race = models.ForeignKey(Race, related_name='checkpoints')
     number = models.IntegerField()
     time = models.IntegerField()
 

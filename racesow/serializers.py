@@ -1,6 +1,6 @@
 from django.utils import timezone
 from rest_framework import serializers, viewsets
-from racesow.models import Player, Map, Tag
+from racesow.models import Player, Map, Tag, Race, Checkpoint
 
 
 class PlayerSerializer(serializers.ModelSerializer):
@@ -48,6 +48,35 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = (
             'name',
+        )
+
+
+class CheckpointSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Checkpoint
+        fields = (
+            'id',
+            'race',
+            'number',
+            'time',
+        )
+
+
+class RaceSerializer(serializers.ModelSerializer):
+    checkpoints = CheckpointSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Race
+        fields = (
+            'id',
+            'player',
+            'map',
+            'server',
+            'time',
+            'playtime',
+            'points',
+            'created',
+            'checkpoints',
         )
 
 
@@ -142,7 +171,7 @@ def raceSerializer(race):
     if timezone.is_aware(created):
         created = timezone.localtime(created, timezone=timezone.utc)
 
-    cp_set = race.checkpoint_set.all()
+    cp_set = race.checkpoints.all()
 
     return {
         'id': race.id,
