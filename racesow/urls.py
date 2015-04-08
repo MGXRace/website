@@ -9,6 +9,8 @@ import racesow.views.wmm as wmm
 
 router = routers.DefaultRouter()
 router.register(r'players', api.PlayerViewSet)
+router.register(r'maps', api.MapViewSet)
+router.register(r'tags', api.TagViewSet)
 
 urlpatterns = patterns(
     '',

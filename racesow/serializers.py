@@ -1,6 +1,6 @@
 from django.utils import timezone
 from rest_framework import serializers, viewsets
-from racesow.models import Player
+from racesow.models import Player, Map, Tag
 
 
 class PlayerSerializer(serializers.ModelSerializer):
@@ -17,6 +17,37 @@ class PlayerSerializer(serializers.ModelSerializer):
             'maps',
             'maps_finished',
             'points',
+        )
+
+
+class MapSerializer(serializers.ModelSerializer):
+    tags = serializers.SlugRelatedField(
+        many=True,
+        slug_field='name',
+        queryset=Tag.objects.all(),
+    )
+
+    class Meta:
+        model = Map
+        fields = (
+            'id',
+            'name',
+            'pk3file',
+            'levelshotfile',
+            'enabled',
+            'races',
+            'oneliner',
+            'playtime',
+            'created',
+            'tags',
+        )
+
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = (
+            'name',
         )
 
 

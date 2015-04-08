@@ -11,7 +11,11 @@ from django.utils import timezone
 from django.views.generic import View
 
 from rest_framework import viewsets
-from racesow.serializers import PlayerSerializer
+from racesow.serializers import (
+    PlayerSerializer,
+    MapSerializer,
+    TagSerializer
+)
 
 from racesow.models import Map, Tag, Player, Race, RaceHistory, Checkpoint
 from racesow.serializers import mapSerializer, playerSerializer, raceSerializer
@@ -27,6 +31,16 @@ __author__ = 'Mark'
 class PlayerViewSet(viewsets.ModelViewSet):
     queryset = Player.objects.all()
     serializer_class = PlayerSerializer
+
+
+class MapViewSet(viewsets.ModelViewSet):
+    queryset = Map.objects.all()
+    serializer_class = MapSerializer
+
+
+class TagViewSet(viewsets.ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
 
 
 class APIMapList(View):
