@@ -55,6 +55,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'rest_framework',
     'racesowold',
     'racesow',
     'djcelery',
@@ -140,6 +141,11 @@ CELERYBEAT_SCHEDULE = {
     },
 }
 
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    'PAGE_SIZE': 10,
+}
 
 
 LOGGING = {
