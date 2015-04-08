@@ -1,3 +1,4 @@
+from __future__ import print_function
 import json
 from django.db.models import Min
 from django.http import HttpResponse, Http404
@@ -32,8 +33,8 @@ class MatchMaker(View):
                         firstplaces += 1
         except:
             import traceback
-            print "Error in MatchMaker calculations!"
-            print "\nrecords_all: {}\nraces_name: {}".format(records_all, races_name)
+            print("Error in MatchMaker calculations!")
+            print("\nrecords_all: {}\nraces_name: {}".format(records_all, races_name))
             traceback.print_exc()
             data = json.dumps({'error': 'exception'})
             return HttpResponse(data, content_type='application_json', status=404)

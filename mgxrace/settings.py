@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/1.6/ref/settings/
 import os
 import sys
 from datetime import timedelta
-from keys import cfg
 
 import djcelery
 djcelery.setup_loader()
@@ -24,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = cfg.get('secret')
+SECRET_KEY = os.environ.get('MGXRACE_SECRET', 'insecuresecret')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -56,7 +55,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
-    'south',
     'racesowold',
     'racesow',
     'djcelery',
@@ -83,17 +81,25 @@ PASSWORD_HASHERS = (
 
 
 # Database
-# https://docs.djangoproject.com/en/1.6/ref/settings/#databases
+# https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
 DATABASES = {
-    'default': {
+    'default': None,
+}
+
+if DEBUG:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+else:
+    DATABASES['default'] = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'racesow',
         'USER': 'rs_django',
-        'PASSWORD': cfg.get('db_pass'),
+        'PASSWORD': os.environ['MGXRACE_DBPASS'],
         'HOST': 'localhost',
     }
-}
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.6/topics/i18n/

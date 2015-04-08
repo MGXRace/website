@@ -1,3 +1,4 @@
+from __future__ import print_function
 import base64
 import json
 from random import randrange
@@ -351,7 +352,7 @@ class APIRace(View):
             clear_oneliner = int(request.POST['co']) == 1
             checkpoints = json.loads(request.POST['checkpoints'])
         except Exception as e:
-            print e
+            print(e)
             data = json.dumps({'error': 'Missing parameters for user'})
             return HttpResponse(data, content_type='application/json', status=400)
 

@@ -1,3 +1,4 @@
+from __future__ import print_function
 from django.conf import settings
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import Http404, HttpResponse
@@ -128,7 +129,7 @@ class MapList(View):
                 q = ''
 
         if settings.DEBUG:
-            print u"MapList.get(version={}, order={}, page={}, q={})".format(version, order, page, q)
+            print(u"MapList.get(version={}, order={}, page={}, q={})".format(version, order, page, q))
 
         if version == 'new':
             db_filter.update({'enabled': True})
@@ -187,7 +188,7 @@ class MapDetails(View):
         order = self.mapdetails_validate_order(kwargs.get('order', ''), version)
 
         if settings.DEBUG:
-            print u"PlayerDetails.get(version={}, order={}, page={})".format(version, order, page)
+            print(u"PlayerDetails.get(version={}, order={}, page={})".format(version, order, page))
 
         # retrieve version-specific map details
         if version == 'new':
@@ -305,7 +306,7 @@ class PlayerList(View):
                 q = ''
 
         if settings.DEBUG:
-            print u"PlayerList.get(version={}, order={}, page={}, q={})".format(version, order, page, q)
+            print(u"PlayerList.get(version={}, order={}, page={}, q={})".format(version, order, page, q))
 
         if version == 'new':
             db_order_l = [order]
@@ -394,7 +395,7 @@ class PlayerDetails(View):
                 q = ''
 
         if settings.DEBUG:
-            print u"PlayerDetails.get(version={}, order={}, page={}, q={})".format(version, order, page, q)
+            print(u"PlayerDetails.get(version={}, order={}, page={}, q={})".format(version, order, page, q))
 
         # retrieve player-specific details
         if version == 'new':

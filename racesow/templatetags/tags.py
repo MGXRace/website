@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.utils.formats import date_format
 import pytz
 from django.template import defaultfilters
+from six import text_type
 
 register = template.Library()
 
@@ -109,7 +110,7 @@ def active(parser, token):
     args = token.split_contents()
     template_tag = args[0]
     if len(args) < 2:
-        raise template.TemplateSyntaxError, "%r tag requires at least one argument" % template_tag
+        raise template.TemplateSyntaxError("%r tag requires at least one argument" % template_tag)
     return NavSelectedNode(args[1:])
 
 
@@ -134,7 +135,7 @@ def active_subpage(parser, token):
     args = token.split_contents()
     template_tag = args[0]
     if len(args) < 2:
-        raise template.TemplateSyntaxError, "%r tag requires at least one argument" % template_tag
+        raise template.TemplateSyntaxError("%r tag requires at least one argument" % template_tag)
     return NavSelectedSubNode(args[1:])
 
 
@@ -143,10 +144,10 @@ class NavSelectedSubNode(template.Node):
         self.patterns = patterns
 
     def render(self, context):
-        path = unicode(context['request'].path)
+        path = text_type(context['request'].path)
         for p in self.patterns:
             try:
-                p_value = unicode(template.Variable(p).resolve(context))
+                p_value = text_type(template.Variable(p).resolve(context))
             except UnicodeDecodeError:
                 continue
             if path.startswith(p_value):
