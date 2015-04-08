@@ -1,11 +1,14 @@
 import datetime
 
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
 from racesow.utils import username_with_html_colors, millis_to_str
+from rest_framework.authtoken.models import Token
 
 
+User = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
 _null = {'blank': True, 'null': True, 'default': None}
 
 
@@ -25,7 +28,9 @@ class Server(models.Model):
     """Racesow Server Model
 
     Model Fields:
-        user (Player): Player who owns/operates the server
+        user (User): Server's associated user model, each server must have
+                     a real django user (without password) for authentication
+                     purposes.
         auth_key (str): Server authentication key for generating api tokens
         address (str): The server address in the form "(ip|domain):port"
         name (str): Name of the server (its sv_hostname setting)
@@ -35,7 +40,7 @@ class Server(models.Model):
         created (datetime): Date/time the server was created
         last_seen (datetime): Date/time the server last phoned home
     """
-    user = models.ForeignKey('Player', on_delete=models.SET_NULL, **_null)
+    user = models.ForeignKey(User)
     auth_key = models.CharField(max_length=255)
     address = models.CharField(max_length=255)
     name = models.CharField(max_length=255)
@@ -45,6 +50,11 @@ class Server(models.Model):
     races = models.PositiveIntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
     last_seen = models.DateTimeField(**_null)
+
+    def save(self, *args, **kwargs):
+        # Ensure the associated user has a token
+        super(Server, self).save(*args, **kwargs)
+        Token.objects.get_or_create(user=self.user)
 
     def __unicode__(self):
         return self.simplified

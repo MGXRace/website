@@ -7,13 +7,26 @@ Usage (debian) from the /website directory:
 import sys
 import traceback
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from .models import (
     Map,
     Player,
     Race)
+from racesow import models
 from racesow.utils import millis_to_str, username_with_html_colors
+from rest_framework import status
+from rest_framework.test import APITestCase
+
+
+User = get_user_model()
+apiroot = '/drf'
+cred = {
+    'username': 'test',
+    'email': None,
+    'password': 'pass',
+}
 
 
 class MapMethodTests(TestCase):
@@ -190,3 +203,37 @@ class RaceTests(TestCase):
         races = Race.objects.filter(map_id=m.id)
         completed_races = len([race for race in races if race.time is not None])
         self.assertEqual(completed_races, 2)
+
+
+class APIAuthTests(APITestCase):
+    """Test API authentication"""
+
+    def setUp(self):
+        # Make an authenticated user / server to access the api
+        self.user = User.objects.create_superuser(**cred)
+        self.server = models.Server.objects.create(user=self.user)
+
+    def tearDown(self):
+        # Clear any saved credentials
+        self.client.logout()
+        self.client.credentials()
+
+    def test_unauthorized(self):
+        """Unauthorized requests are forbidden"""
+        response = self.client.get(apiroot + '/players/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_tokenauth(self):
+        """Token authorized requests are allowed"""
+        key = self.user.auth_token.key
+        self.client.credentials(HTTP_AUTHORIZATION='Token ' + key)
+
+        response = self.client.get(apiroot + '/players/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_sessionauth(self):
+        """Session authorized requests are allowed"""
+        self.client.login(**cred)
+
+        response = self.client.get(apiroot + '/players/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

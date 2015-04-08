@@ -56,6 +56,7 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'rest_framework',
+    'rest_framework.authtoken',
     'racesowold',
     'racesow',
     'djcelery',
@@ -143,6 +144,10 @@ CELERYBEAT_SCHEDULE = {
 
 
 REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ),
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
     'PAGE_SIZE': 10,
 }
