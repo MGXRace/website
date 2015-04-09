@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
 import base64
 import hashlib
+import json
 import re
 from django.utils.html import escape
+from rest_framework.exceptions import ParseError
+
 
 colorcode_regex = re.compile(r'(\^[0-9])')
 colors = {
@@ -150,3 +153,37 @@ def average(l):
 def floats_differ(flt1, flt2):
     """Returns True for floats differing 0.000001 or less, otherwise False"""
     return abs(float(flt1) - float(flt2)) > 0.000001
+
+
+def b64decode(msg):
+    """Decode a base64 encoded message to a unicode string"""
+    return base64.b64decode(msg.encode('utf-8'), '-_').decode('utf-8')
+
+
+def b64param(query_params, param):
+    """Parse a b64 encoded param or raise an exception"""
+    try:
+        value = query_params[param]
+        print(value)
+        value = b64decode(value)
+        print(value)
+    except KeyError:
+        errmsg = u'Parameter "{0}" is required'
+        raise ParseError(detail=errmsg.format(param))
+    except (TypeError, UnicodeDecodeError):
+        errmsg = u'Parameter "{0}" is not a valid base64 encoded string'
+        raise ParseError(detail=errmsg.format(param))
+
+    return value
+
+
+def jsonparam(query_params, param):
+    """Parse b64 encoded json object or raise an exception"""
+    value = b64param(query_params, param)
+    try:
+        value = json.loads(value)
+    except ValueError:
+        errmsg = u'Parameter "{0}" is not a valid json string'
+        raise ParseError(detail=errmsg.format(param))
+
+    return value
