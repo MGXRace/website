@@ -4,6 +4,7 @@ simple testcases, should be expanded for testing services.py
 Usage (debian) from the /website directory:
     python manage.py test racesow
 """
+import unittest
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -12,7 +13,7 @@ from .models import (
     Player,
     Race)
 from racesow import models
-from racesow.utils import millis_to_str, username_with_html_colors
+from racesow import utils
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -74,42 +75,42 @@ class UtilsTests(TestCase):
     def test_millis_to_str_1(self):
         str_ = "0.005"
         millis = 5
-        self.assertEqual(millis_to_str(millis), str_)
+        self.assertEqual(utils.millis_to_str(millis), str_)
 
     def test_millis_to_str_2(self):
         str_ = "9.986"
         millis = 9986
-        self.assertEqual(millis_to_str(millis), str_)
+        self.assertEqual(utils.millis_to_str(millis), str_)
 
     def test_millis_to_str_3(self):
         str_ = "29.999"
         millis = 29999
-        self.assertEqual(millis_to_str(millis), str_)
+        self.assertEqual(utils.millis_to_str(millis), str_)
 
     def test_millis_to_str_4(self):
         str_ = "59.999"
         millis = 59999
-        self.assertEqual(millis_to_str(millis), str_)
+        self.assertEqual(utils.millis_to_str(millis), str_)
 
     def test_millis_to_str_5(self):
         str_ = "1:00.000"
         millis = 60000
-        self.assertEqual(millis_to_str(millis), str_)
+        self.assertEqual(utils.millis_to_str(millis), str_)
 
     def test_millis_to_str_6(self):
         str_ = "1:00.001"
         millis = 60001
-        self.assertEqual(millis_to_str(millis), str_)
+        self.assertEqual(utils.millis_to_str(millis), str_)
 
     def test_millis_to_str_7(self):
         str_ = "1:24.172"
         millis = 84172
-        self.assertEqual(millis_to_str(millis), str_)
+        self.assertEqual(utils.millis_to_str(millis), str_)
 
     def test_millis_to_str_8(self):
         str_ = "10:24.172"
         millis = 624172
-        self.assertEqual(millis_to_str(millis), str_)
+        self.assertEqual(utils.millis_to_str(millis), str_)
 
 
 class NicknameTests(TestCase):
@@ -118,35 +119,35 @@ class NicknameTests(TestCase):
 
     def test_nickname_1(self):
         name = u'|^^|GallotoroDBS^7'
-        username_with_html_colors(name)
+        utils.username_with_html_colors(name)
 
     def test_nickname_2(self):
         name = u'^9|^1E^2R^3E^4N^^|^7'
-        username_with_html_colors(name)
+        utils.username_with_html_colors(name)
 
     def test_nickname_3(self):
         name = u'^^Z[e]X^^^7'
-        username_with_html_colors(name)
+        utils.username_with_html_colors(name)
 
     def test_nickname_4(self):
         name = u'^^.  ^4_  ^8.^7'
-        username_with_html_colors(name)
+        utils.username_with_html_colors(name)
 
     def test_nickname_5(self):
         name = u'^^Laser^5pistole^7'
-        username_with_html_colors(name)
+        utils.username_with_html_colors(name)
 
     def test_nickname_6(self):
         name = u'^^\'\'**^7'
-        username_with_html_colors(name)
+        utils.username_with_html_colors(name)
 
     def test_nickname_7(self):
         name = u'^^&#39;&#39;**^7'
-        username_with_html_colors(name)
+        utils.username_with_html_colors(name)
 
     def test_nickname_8(self):
         name = u'^9|^1E^2R^3E^4N^^|^7'
-        username_with_html_colors(name)
+        utils.username_with_html_colors(name)
 
 
 class RaceTests(TestCase):
@@ -255,6 +256,16 @@ class APITagTests(APITestCase):
         self.assertEqual(response.data, tagdata)
         self.assertTrue(models.Tag.objects.get(**tagdata))
 
+    def test_list_sort(self):
+        """It should sort by name"""
+        response = self.client.get(apiroot + '/tags/?page=2')
+        tags1 = response.data['results']
+
+        response = self.client.get(apiroot + '/tags/?page=1&sort=-name')
+        tags2 = response.data['results']
+
+        self.assertEqual(tags1[::-1], tags2)
+
     def test_detail_get(self):
         """It should fetch a new tag"""
         response = self.client.get(apiroot + '/tags/one/')
@@ -296,6 +307,65 @@ class APITagTests(APITestCase):
         """It should delete an existing tag"""
         response = self.client.delete(apiroot + '/tags/one/')
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         with self.assertRaises(models.Tag.DoesNotExist):
             models.Tag.objects.get(name='one')
+
+
+class APIMapTests(APITestCase):
+    """Test Map API endpoint"""
+
+    def setUp(self):
+        self.user = User.objects.create_superuser(**cred)
+        self.server = models.Server.objects.create(user=self.user)
+        self.client.login(**cred)
+
+        t1 = models.Tag.objects.create(name='one')
+        t2 = models.Tag.objects.create(name='two')
+
+        m1 = models.Map.objects.create(name='Map One')
+        m2 = models.Map.objects.create(name='Map Two')
+        models.Map.objects.create(name='Map Three')
+        m1.tags.add(t1, t2)
+        m2.tags.add(t1)
+
+    def tearDown(self):
+        self.client.logout()
+        self.client.credentials()
+
+    def test_list_regex(self):
+        """It should filter on a name regex"""
+        pattern = utils.b64encode('o$')
+        response = self.client.get(apiroot + '/maps/?pattern=' + pattern)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['name'], 'Map Two')
+
+    def test_list_tags(self):
+        """It should return maps that contain specified tags"""
+        # One map has both tags 'one' and 'two'
+        tags = utils.jsonencode(['one', 'two'])
+        response = self.client.get(apiroot + '/maps/?tags=' + tags)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+
+        # Two maps are tagged with 'one'
+        tags = utils.jsonencode(['one'])
+        response = self.client.get(apiroot + '/maps/?tags=' + tags)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 2)
+
+    @unittest.expectedFailure
+    def test_list_rand(self):
+        """It should randomize the output order"""
+        response = self.client.get(apiroot + '/maps/?rand')
+        order1 = [m['name'] for m in response.data['results']]
+
+        response = self.client.get(apiroot + '/maps/?rand')
+        order2 = [m['name'] for m in response.data['results']]
+
+        # This will fail with probability 1/6
+        self.assertNotEqual(order1, order2)

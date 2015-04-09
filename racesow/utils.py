@@ -157,16 +157,14 @@ def floats_differ(flt1, flt2):
 
 def b64decode(msg):
     """Decode a base64 encoded message to a unicode string"""
-    return base64.b64decode(msg.encode('utf-8'), '-_').decode('utf-8')
+    return base64.b64decode(msg.encode('utf-8'), b'-_').decode('utf-8')
 
 
 def b64param(query_params, param):
     """Parse a b64 encoded param or raise an exception"""
     try:
         value = query_params[param]
-        print(value)
         value = b64decode(value)
-        print(value)
     except KeyError:
         errmsg = u'Parameter "{0}" is required'
         raise ParseError(detail=errmsg.format(param))
@@ -187,3 +185,13 @@ def jsonparam(query_params, param):
         raise ParseError(detail=errmsg.format(param))
 
     return value
+
+
+def b64encode(msg):
+    """Encode a unicode string to a base64 encoded message"""
+    return base64.b64encode(msg.encode('utf-8'), b'-_').decode('utf-8')
+
+
+def jsonencode(msg):
+    """Encode a object to a base64 encoded json message"""
+    return b64encode(json.dumps(msg))

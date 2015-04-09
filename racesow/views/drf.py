@@ -46,6 +46,8 @@ class TagViewSet(viewsets.ModelViewSet):
     lookup_field = 'name'
     queryset = mod.Tag.objects.all()
     serializer_class = ser.TagSerializer
+    ordering_fields = ('name',)
+    ordering = ('name',)
 
 
 class RaceViewSet(viewsets.ModelViewSet):
