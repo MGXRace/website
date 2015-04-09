@@ -369,3 +369,11 @@ class APIMapTests(APITestCase):
 
         # This will fail with probability 1/6
         self.assertNotEqual(order1, order2)
+
+    def test_detail_get(self):
+        """It should lookup maps on b64 encoded name"""
+        name = utils.b64encode('Map Two')
+        response = self.client.get(apiroot + '/maps/' + name + '/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['name'], 'Map Two')

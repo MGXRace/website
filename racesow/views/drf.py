@@ -1,5 +1,6 @@
 import racesow.models as mod
 import racesow.serializers as ser
+from django.shortcuts import get_object_or_404
 from racesow import utils
 from rest_framework import viewsets
 
@@ -10,6 +11,29 @@ class PlayerViewSet(viewsets.ModelViewSet):
 
 
 class MapViewSet(viewsets.ModelViewSet):
+    """ViewSet for maps/ REST endpoint
+
+    Routes:
+
+    - List view: `apiroot/maps/`
+    - Detail view: `apiroot/maps/{mapname}/`
+
+    Arguments:
+
+    - `mapname` A urlsafe-base64 encoded string
+
+    Supported query parameters:
+
+    - `sort={field}` Sort the results by the given field, prefix field with
+      a "-" to reverse the sort.
+    - `rand` If supplied, the results will be randomly sorted, this takes
+      precedence over `sort`
+    - `pattern={pattern}` Filter the results to maps with names matching a
+      regex pattern. `pattern` must be a urlsafe-base64 encoded string.
+    - `tags={tags}` Filter the results to maps with every tag in `tags`.
+      `tags` must be a urlsafe-base64 encoded json list. E.g.
+      `["pg", "rl"]`
+    """
     queryset = mod.Map.objects.all()
     serializer_class = ser.MapSerializer
     ordering_fields = ('name', 'races', 'playtime', 'created', 'oneliner')
@@ -40,6 +64,24 @@ class MapViewSet(viewsets.ModelViewSet):
         if 'rand' in self.request.query_params:
             queryset = queryset.order_by('?')
         return queryset
+
+    def get_object(self):
+        """Get the map specified for the detail view"""
+        queryset = self.filter_queryset(self.get_queryset())
+
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        assert lookup_url_kwarg in self.kwargs, (
+            'Expected view %s to be called with a URL keyword argument '
+            'named "%s". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.' %
+            (self.__class__.__name__, lookup_url_kwarg)
+        )
+
+        name = utils.b64param(self.kwargs, lookup_url_kwarg)
+        obj = get_object_or_404(queryset, name=name)
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
 
 class TagViewSet(viewsets.ModelViewSet):
