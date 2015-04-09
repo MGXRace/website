@@ -4,9 +4,6 @@ simple testcases, should be expanded for testing services.py
 Usage (debian) from the /website directory:
     python manage.py test racesow
 """
-import sys
-import traceback
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
@@ -40,10 +37,7 @@ class MapMethodTests(TestCase):
         map_.name = insert_name
         map_.save()
 
-        try:
-            Map.objects.get(name=insert_name)
-        except:
-            self.fail("Expected to find inserted map {}. Exception: {}".format(insert_name, sys.exc_type))
+        Map.objects.get(name=insert_name)
 
     def test_get_nonexisting_map(self):
         insert_name = "MyTestMap"
@@ -52,7 +46,8 @@ class MapMethodTests(TestCase):
         map_.name = insert_name
         map_.save()
 
-        self.assertRaises(Map.DoesNotExist, Map.objects.get, name=select_name)
+        with self.assertRaises(Map.DoesNotExist):
+            Map.objects.get(name=select_name)
 
     def test_increment_map_playtime(self):
         insert_name = "MyTestMap"
@@ -123,60 +118,35 @@ class NicknameTests(TestCase):
 
     def test_nickname_1(self):
         name = u'|^^|GallotoroDBS^7'
-        try:
-            username_with_html_colors(name)
-        except:
-            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+        username_with_html_colors(name)
 
     def test_nickname_2(self):
         name = u'^9|^1E^2R^3E^4N^^|^7'
-        try:
-            username_with_html_colors(name)
-        except:
-            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+        username_with_html_colors(name)
 
     def test_nickname_3(self):
         name = u'^^Z[e]X^^^7'
-        try:
-            username_with_html_colors(name)
-        except:
-            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+        username_with_html_colors(name)
 
     def test_nickname_4(self):
         name = u'^^.  ^4_  ^8.^7'
-        try:
-            username_with_html_colors(name)
-        except:
-            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+        username_with_html_colors(name)
 
     def test_nickname_5(self):
         name = u'^^Laser^5pistole^7'
-        try:
-            username_with_html_colors(name)
-        except:
-            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+        username_with_html_colors(name)
 
     def test_nickname_6(self):
         name = u'^^\'\'**^7'
-        try:
-            username_with_html_colors(name)
-        except:
-            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+        username_with_html_colors(name)
 
     def test_nickname_7(self):
         name = u'^^&#39;&#39;**^7'
-        try:
-            username_with_html_colors(name)
-        except:
-            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
-
+        username_with_html_colors(name)
 
     def test_nickname_8(self):
         name = u'^9|^1E^2R^3E^4N^^|^7'
-        try:
-            username_with_html_colors(name)
-        except:
-            self.fail("Failed to parse nickname '{}' to html.\n{}".format(name, traceback.format_exc(1)))
+        username_with_html_colors(name)
 
 
 class RaceTests(TestCase):
@@ -192,17 +162,19 @@ class RaceTests(TestCase):
         p4 = Player.objects.create(username='asdd', simplified='asdd')
         race1 = Race.objects.create(player_id=p1.id, map_id=m.id)
         race2 = Race.objects.create(player_id=p2.id, map_id=m.id)
-        race3 = Race.objects.create(player_id=p3.id, map_id=m.id)
-        race4 = Race.objects.create(player_id=p4.id, map_id=m.id)
+        Race.objects.create(player_id=p3.id, map_id=m.id)
+        Race.objects.create(player_id=p4.id, map_id=m.id)
         race1.time = 12345
         race2.time = 54321
         race1.save()
         race2.save()
 
-        self.assertEqual(len(Race.objects.filter(time__isnull=False)), 2)
+        races = Race.objects.filter(time__isnull=False)
+        self.assertEqual(len(races), 2)
+
         races = Race.objects.filter(map_id=m.id)
-        completed_races = len([race for race in races if race.time is not None])
-        self.assertEqual(completed_races, 2)
+        completed_races = [race for race in races if race.time is not None]
+        self.assertEqual(len(completed_races), 2)
 
 
 class APIAuthTests(APITestCase):

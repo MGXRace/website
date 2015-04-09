@@ -63,9 +63,11 @@ def username_with_html_colors(username):
     username_colored = u''
 
     current_color = DEFAULT_COLOR
-    for k in filter(None, colorcode_regex.split(username)):  # ['Playe', '^5', 'r', '^9', '!', '^5', '?']
+    # ['Playe', '^5', 'r', '^9', '!', '^5', '?']
+    for k in filter(None, colorcode_regex.split(username)):
         if not re.match('\^[0-9]', k):
-            username_colored += u'<span style="color:{rgb}">{chars}</span>'.format(rgb=colors[current_color], chars=k)
+            section = u'<span style="color:{0}">{1}</span>'
+            username_colored += section.format(colors[current_color], k)
         else:
             current_color = k
     return username_colored
@@ -78,7 +80,8 @@ def weaponstring(weapons):
         for instance, no weapons:   0000000
                 and all weapons:    1111111
 
-    :return: sequence of <div> elements with 'class' corresponding to the waepons on this map
+    :return: sequence of <div> elements with 'class' corresponding to the
+        weapons on this map
     """
 
     result = ''

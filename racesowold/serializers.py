@@ -1,5 +1,6 @@
 from django.utils import timezone
 
+
 def playerSerializer(player):
     """
     Formats an old player object into primitive types for serializing
@@ -27,6 +28,7 @@ def playerSerializer(player):
         'points': player.points
     }
 
+
 def mapSerializer(map_):
     """
     Formats a map object into primitive types for serializing
@@ -47,8 +49,9 @@ def mapSerializer(map_):
     ```
     """
     created = map_.created
-    if created and timezone.is_aware( created ):
-        created = timezone.localtime(created, timezone=timezone.utc).isoformat()
+    if created and timezone.is_aware(created):
+        created = timezone.localtime(created, timezone=timezone.utc) \
+                          .isoformat()
 
     return {
         'id': map_.id,
@@ -59,6 +62,7 @@ def mapSerializer(map_):
         'playtime': map_.playtime,
         'created': created
     }
+
 
 def raceSerializer(race):
     """
@@ -82,7 +86,7 @@ def raceSerializer(race):
     created = race.created
     if not created:
         created = '0000-00-00'
-    elif timezone.is_aware( created ):
+    elif timezone.is_aware(created):
         created = timezone.localtime(created, timezone=timezone.utc)
 
     return {

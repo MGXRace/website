@@ -134,7 +134,7 @@ INTERNAL_IPS = ['127.0.0.1']
 
 CELERYD_HIJACK_ROOT_LOGGER = False
 
-# http://celery.readthedocs.org/en/latest/userguide/periodic-tasks.html#entries
+# http://celery.readthedocs.org/en/latest/userguide/periodic-tasks.html
 CELERYBEAT_SCHEDULE = {
     'evaluate-maps-every-1-minute': {
         'task': 'racesow.tasks.recompute_updated_maps',
@@ -158,16 +158,17 @@ LOGGING = {
     'disable_existing_loggers': True,
     'formatters': {
         'verbose': {
-            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+            'format': ('%(levelname)s %(asctime)s %(module)s %(process)d'
+                       '%(thread)d %(message)s')
         },
         'simple': {
             'format': '%(levelname)s %(message)s'
         },
     },
     'handlers': {
-        'console':{
-            'level':'INFO',
-            'class':'logging.StreamHandler',
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
             'stream': sys.stdout
         },
     },

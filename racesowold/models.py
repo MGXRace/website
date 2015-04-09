@@ -2,7 +2,9 @@ import datetime
 
 from django.db import models
 
-from racesow.utils import username_with_html_colors, millis_to_str, weaponstring
+from racesow.utils import (
+    username_with_html_colors, millis_to_str, weaponstring
+)
 
 
 _null = {'blank': True, 'null': True, 'default': None}
@@ -106,7 +108,8 @@ class Map(models.Model):
 
     def htmlname_short(self, maxlen=32):
         if self.longname:
-            return username_with_html_colors(u'{}'.format(self.longname)[:maxlen])
+            msg = u'{}'.format(self.longname)[:maxlen]
+            return username_with_html_colors(msg)
         return u''
 
     def get_weapons(self):

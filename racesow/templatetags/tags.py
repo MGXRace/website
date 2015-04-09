@@ -7,7 +7,8 @@ from six import text_type
 
 register = template.Library()
 
-RANK_CLASS = {1: 'medal-gold', 2: 'medal-silver', 3: 'medal-bronze'}  # css color classes for top 3 ranks
+# css color classes for top 3 ranks
+RANK_CLASS = {1: 'medal-gold', 2: 'medal-silver', 3: 'medal-bronze'}
 RANK_NAME = {1: 'Gold', 2: 'Silver', 3: 'Bronze'}
 
 
@@ -18,10 +19,12 @@ def get_timezones():
 
 @register.simple_tag
 def get_time():
+    """ Returns the local time for the user
+
+    Makes use of the user's preferred timezone if set.
     """
-    Returns the local time for the user. Makes use of the user's preferred timezone if set.
-    """
-    return date_format(timezone.localtime(timezone.now()), 'DATE_FORMAT', use_l10n=False)
+    return date_format(timezone.localtime(timezone.now()), 'DATE_FORMAT',
+                       use_l10n=False)
 
 
 @register.simple_tag
@@ -45,33 +48,41 @@ def rank_to_name(rank):
 
 @register.simple_tag
 def time_passed_since(date):
-    """
-    Returns how 'long ago' a certain event happened. Currently used to print how long ago a player made a new record on
-    a map.
+    """ Returns how 'long ago' a certain event happened
+
+    Currently used to print how long ago a player made a new record on a map.
     """
     delta = timezone.now() - date
     if delta.days:
         if delta.days > 30:
             months = float(delta.days) / 30.0
-            return "{} {} ago".format(int(months), "month" if months < 2.0 else "months")
-        if delta.days > 7:
+            units = "month" if months < 2.0 else "months"
+            return "{} {} ago".format(int(months), units)
+        elif delta.days > 7:
             weeks = float(delta.days) / 7.0
-            return "{} {} ago".format(int(weeks), "week" if weeks < 2.0 else "weeks")
-        return "{} {} ago".format(delta.days, "day" if delta.days == 1 else "days")
+            units = "week" if weeks < 2.0 else "weeks"
+            return "{} {} ago".format(int(weeks), units)
+        else:
+            units = "day" if delta.days == 1 else "days"
+            return "{} {} ago".format(delta.days, units)
+
     hours = float(delta.seconds) / 3600.0
     if hours >= 1.0:
-        return "{} {} ago".format(int(hours), "hour" if hours < 2.0 else "hours")
+        units = "hour" if hours < 2.0 else "hours"
+        return "{} {} ago".format(int(hours), units)
     minutes = float(delta.seconds) / 60.0
     if minutes >= 1.0:
-        return "{} {} ago".format(int(minutes), "minute" if minutes < 2.0 else "minutes")
+        units = "minute" if minutes < 2.0 else "minutes"
+        return "{} {} ago".format(int(minutes), units)
     seconds = max(1, delta.seconds)
-    return "{} {} ago".format(seconds, "second" if seconds == 1 else "seconds")
+    units = "second" if seconds == 1 else "seconds"
+    return "{} {} ago".format(seconds, units)
 
 
 @register.assignment_tag
 def format_header(column, order):
-    """
-    Decides how the column's header should be formatted, and what "order" it's href should have.
+    """ Decides how the column's header should be formatted, and what "order"
+    it's href should have.
 
     :param column: the table header to determine the current title and url for
     :param order: the active table ordering
@@ -81,23 +92,31 @@ def format_header(column, order):
 
     col_l = column.lower().replace(' ', '')
     if "-" + col_l == order:
-        # if col_l is "points" and order is "-points", the column title should be "Points-"
-        result['title'] = column.capitalize() + " <i class='fa fa-chevron-down'></i>"
+        # if col_l is "points" and order is "-points", the column title should
+        # be "Points-"
+        result['title'] = column.capitalize() + \
+            " <i class='fa fa-chevron-down'></i>"
         # don't escape the html
         result['title'] = defaultfilters.safe(result['title'])
-        # if col_l is "points" and order is "-points", clicking Points url should order results with "points"
+        # if col_l is "points" and order is "-points", clicking Points url
+        # should order results with "points"
         result['url'] = col_l
     else:
-        # if col_l is "points" and current sort is "points", clicking Points url should order results with "-points"
-        # or, if col_l is "points" and order is "skill", clicking Points url should default order results with "-points"
+        # if col_l is "points" and current sort is "points", clicking Points
+        # url should order results with "-points" or, if col_l is "points" and
+        # order is "skill", clicking Points url should default order results
+        # with "-points"
         result['url'] = "-" + col_l
         if col_l == order:
-            # if col_l is "points" and current sort is "points", the column title should be "Points+"
-            result['title'] = column.capitalize() + " <i class='fa fa-chevron-up'></i>"
+            # if col_l is "points" and current sort is "points", the column
+            # title should be "Points+"
+            result['title'] = column.capitalize() + \
+                " <i class='fa fa-chevron-up'></i>"
             # don't escape the html
             result['title'] = defaultfilters.safe(result['title'])
         else:
-            # if col_l is "points" and current sort is "skill", the column title should be "Points"
+            # if col_l is "points" and current sort is "skill", the column
+            # title should be "Points"
             result['title'] = column.capitalize()
     return result
 
@@ -110,7 +129,8 @@ def active(parser, token):
     args = token.split_contents()
     template_tag = args[0]
     if len(args) < 2:
-        raise template.TemplateSyntaxError("%r tag requires at least one argument" % template_tag)
+        raise template.TemplateSyntaxError(
+            "%r tag requires at least one argument" % template_tag)
     return NavSelectedNode(args[1:])
 
 
@@ -135,7 +155,8 @@ def active_subpage(parser, token):
     args = token.split_contents()
     template_tag = args[0]
     if len(args) < 2:
-        raise template.TemplateSyntaxError("%r tag requires at least one argument" % template_tag)
+        raise template.TemplateSyntaxError(
+            "%r tag requires at least one argument" % template_tag)
     return NavSelectedSubNode(args[1:])
 
 

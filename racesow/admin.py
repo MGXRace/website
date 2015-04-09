@@ -15,13 +15,13 @@ class MapAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('name', 'pk3file', 'tags'),
             'classes': ('wide', ),
-        })
-    ,)
+        }),
+    )
 
     # add extra css definitions for the add-page
     class Media:
         css = {
-             'all': ('admin/css/admin_extra.css',)
+            'all': ('admin/css/admin_extra.css',)
         }
 
 admin.site.register(Map, MapAdmin)

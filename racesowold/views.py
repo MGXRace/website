@@ -1,6 +1,4 @@
-"""
-Racesow Old Models View
-"""
+"""Racesow Old Models View"""
 import base64
 import json
 from django.core.exceptions import PermissionDenied
@@ -14,6 +12,10 @@ from .serializers import (
     raceSerializer)
 
 
+def _b64decode(msg):
+    return base64.b64decode(msg.encode('ascii'), '-_')
+
+
 class APIRace(View):
     """Server API interface for Race objects."""
 
@@ -22,31 +24,39 @@ class APIRace(View):
             raise PermissionDenied
 
         try:
-            mapname = base64.b64decode(request.GET['map'].encode('ascii'), '-_')
+            mapname = _b64decode(request.GET['map'])
         except:
             data = json.dumps({'error': 'Invalid or missing parameter <map>'})
-            return HttpResponse(data, content_type='application/json', status=400)
+            return HttpResponse(data, content_type='application/json',
+                                status=400)
 
         try:
             limit = int(request.GET['limit'])
         except ValueError:
             data = json.dumps({'error': '<limit> should be a number'})
-            return HttpResponse(data, content_type='application/json', status=400)
+            return HttpResponse(data, content_type='application/json',
+                                status=400)
         except:
-            data = json.dumps({'error': 'Invalid or missing parameter <limit>'})
-            return HttpResponse(data, content_type='application/json', status=400)
+            data = json.dumps(
+                {'error': 'Invalid or missing parameter <limit>'})
+            return HttpResponse(data, content_type='application/json',
+                                status=400)
 
         try:
             map_ = Map.objects.get(name=mapname)
         except:
-            data = json.dumps({'error': 'Could not find map \'{}\''.format(mapname)})
-            return HttpResponse(data, content_type='application/json', status=400)
+            data = json.dumps(
+                {'error': 'Could not find map \'{}\''.format(mapname)})
+            return HttpResponse(data, content_type='application/json',
+                                status=400)
 
-        races = PlayerMap.objects.filter(map=map_,
-                                         time__isnull=False,
-                                         player__isnull=False,
-                                         prejumped='false')\
-                                 .order_by('time')[:limit]
+        flt = {
+            'map': map_,
+            'time__isnull': False,
+            'player__isnull': False,
+            'prejumped': 'false',
+        }
+        races = PlayerMap.objects.filter(**flt).order_by('time')[:limit]
         data = {
             "map": mapname,
             "oneliner": map_.oneliner,

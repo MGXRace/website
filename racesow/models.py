@@ -74,7 +74,8 @@ class Map(models.Model):
         oneliner (str): Oneliner message for the map
         tags (RelatedManager): Manager for Tag objects associated with the map
         compute_points (bool): True if the map has new race times or playtimes
-        last_computation (datetime): last computation of points for races on this map
+        last_computation (datetime): last computation of points for races on
+            this map
     """
     name = models.CharField(max_length=255)
     pk3file = models.FileField(upload_to='maps', blank=True)
@@ -155,8 +156,8 @@ class Player(models.Model):
         races (int): number of races the player has finished
         maps (int): number of maps the player has raced on
         maps_finished (int): number of maps the player has completed a race on
-        points (int): total number of point this player has earned, in thousands
-
+        points (int): total number of point this player has earned, in
+            thousands
     """
     username = models.CharField(max_length=64, unique=True)
     admin = models.BooleanField(default=False)
@@ -165,7 +166,7 @@ class Player(models.Model):
     playtime = models.BigIntegerField(default=0)
     races = models.IntegerField(default=0)
     maps = models.IntegerField(default=0)
-    maps_finished = models.IntegerField(default=0)  # for tracking actually finished maps
+    maps_finished = models.IntegerField(default=0)  # actually finished maps
     points = models.IntegerField(default=0)         # total number of points
 
     def __unicode__(self):
@@ -198,9 +199,11 @@ class RaceHistory(models.Model):
         player (Player): Player performing the race
         map (Map): Map the race was performed on
         server (Server): Server the race was performed on
-        time (int): Time to complete the race in milliseconds (null if no time was made)
+        time (int): Time to complete the race in milliseconds (null if no
+            time was made)
         playtime (int): Player's cumulative playtime on the map
-        points (int): Points awarded to the player who completed this race, in thousands
+        points (int): Points awarded to the player who completed this race,
+            in thousands
         rank (int): The place that the racetime took on the map toplist
         created (datetime): Datetime when the record was made
         last_played (datetime): Datetime when the playtime stats were updated
@@ -231,12 +234,15 @@ class Race(models.Model):
         player (Player): Player performing the race
         map (Map): Map the race was performed on
         server (Server): Server the race was performed on
-        time (int): Time to complete the race in milliseconds (null if no time was made)
+        time (int): Time to complete the race in milliseconds (null if no time
+            was made)
         playtime (int): Player's cumulative playtime on the map
-        points (int): Points awarded to the player who completed this race, in thousands, used to compute player
-                      'skill'. -1000 means not yet evaluated.
-        rank (int): The place that the racetime took on the map toplist, used to display gold/silver/bronze medals.
-                    Updated during point calculation.
+        points (int): Points awarded to the player who completed this race, in
+            thousands, used to compute player 'skill'. -1000 means not yet
+            evaluated.
+        rank (int): The place that the racetime took on the map toplist, used
+            to display gold/silver/bronze medals. Updated during point
+            calculation.
         created (datetime): Datetime when the record was made
         last_played (datetime): Datetime when the playtime stats were updated
     """

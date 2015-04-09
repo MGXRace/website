@@ -1,5 +1,5 @@
 from django.utils import timezone
-from rest_framework import serializers, viewsets
+from rest_framework import serializers
 from racesow.models import Player, Map, Tag, Race, Checkpoint
 
 
@@ -134,11 +134,13 @@ def mapSerializer(map_):
     if timezone.is_aware(created):
         created = timezone.localtime(created, timezone=timezone.utc)
 
+    pk3file = map_.pk3file.url if map_.pk3file else None
+    levelshotfile = map_.levelshotfile.url if map_.levelshotfile else None
     return {
         'id': map_.id,
         'name': map_.name,
-        'pk3file': map_.pk3file.url if map_.pk3file else None,
-        'levelshotfile': map_.levelshotfile.url if map_.levelshotfile else None,
+        'pk3file': pk3file,
+        'levelshotfile': levelshotfile,
         'enabled': map_.enabled,
         'races': map_.races,
         'oneliner': map_.oneliner,

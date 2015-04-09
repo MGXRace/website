@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-import time
 import datetime
 
 from celery import shared_task
@@ -27,16 +26,19 @@ def force_recompute_all():
     for map_ in Map.objects.all():
         # awards points to finished races on this map.
         services.map_evaluate_points(map_.id, reset=True)
-        # reset=True indicates that all Player.points/Player.maps_finished columns have been set to 0 and that the
-        # current Race.points values should be discarded. The method recomputes Race.points for all players, adds this
-        # to Player.points and increments Player.finished_maps
+        # reset=True indicates that all Player.points/Player.maps_finished
+        # columns have been set to 0 and that the current Race.points values
+        # should be discarded. The method recomputes Race.points for all
+        # players, adds this to Player.points and increments
+        # Player.finished_maps
 
         map_.compute_points = False
         map_.last_computation = datetime.datetime.now()
         map_.save()
 
     # Check for races made during this task.
-    # This is necessary to prevent races from staying at -1 points for possibly long periods of time
+    # This is necessary to prevent races from staying at -1 points for possibly
+    # long periods of time
     while True:
         new_races = Race.objects.filter(time__isnull=False, points=-1000)
         new_races.query.group_by = ['map_id']
@@ -44,7 +46,8 @@ def force_recompute_all():
         if not new_races:
             logger.info("force_recompute_all done")
             return
-        # else: new races were registered during this task and map_.compute_points was overwritten
+        # else: new races were registered during this task and
+        # map_.compute_points was overwritten
 
         logger.info("{} maps updated during task".format(len(new_races)))
 
@@ -67,7 +70,8 @@ def recompute_updated_maps():
         # race.points = computed_points
         #       player.points += Race.points
         #       player.finished_maps += 1
-        # else if the player's recomputed points are different from the current value (by a 0.01 margin)
+        # else if the player's recomputed points are different from the
+        # current value (by a 0.01 margin)
         #       old_points = race.points
         #       player.points += (computed_points - old_points)
         #       race.points = computed_points

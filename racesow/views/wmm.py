@@ -18,10 +18,14 @@ class MatchMaker(View):
             player_ = Player.objects.get(username=username)
         except:
             data = json.dumps({'error': 'Player not found'})
-            return HttpResponse(data, content_type='application_json', status=404)
+            return HttpResponse(data, content_type='application_json',
+                                status=404)
 
-        records_all = Race.objects.filter(time__isnull=False).values('map_id').annotate(besttime=Min('time'))
-        races_name = Race.objects.filter(player__pk=player_.pk, time__isnull=False)
+        records_all = Race.objects.filter(time__isnull=False) \
+                                  .values('map_id') \
+                                  .annotate(besttime=Min('time'))
+        races_name = Race.objects.filter(player__pk=player_.pk,
+                                         time__isnull=False)
 
         try:
             firstplaces = 0
@@ -29,15 +33,18 @@ class MatchMaker(View):
                 mapid = race.map.pk
                 maptime = int(race.time)
                 for record in records_all:
-                    if record['map_id'] == mapid and record['besttime'] == maptime:
+                    if record['map_id'] == mapid and \
+                       record['besttime'] == maptime:
                         firstplaces += 1
         except:
             import traceback
             print("Error in MatchMaker calculations!")
-            print("\nrecords_all: {}\nraces_name: {}".format(records_all, races_name))
+            print("\nrecords_all: {}\nraces_name: {}".format(records_all,
+                                                             races_name))
             traceback.print_exc()
             data = json.dumps({'error': 'exception'})
-            return HttpResponse(data, content_type='application_json', status=404)
+            return HttpResponse(data, content_type='application_json',
+                                status=404)
 
         # Serialize the player
         pdata = playerSerializer(player_)

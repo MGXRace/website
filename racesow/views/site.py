@@ -1,7 +1,7 @@
 from __future__ import print_function
 from django.conf import settings
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
-from django.http import Http404, HttpResponse
+from django.http import Http404
 from django.shortcuts import render, redirect
 from django.views.generic import View
 from django.utils import timezone
@@ -43,10 +43,13 @@ def get_pagebuttons_for_page(objects, page):
     page = int(page)
     if paginator.num_pages <= BUTTONS_PER_PAGE:
         return range(1, paginator.num_pages + 1)
-    if page < 3:  # show first 5 pagebuttons when viewing one of the first 2 pages
+    # show first 5 pagebuttons when viewing one of the first 2 pages
+    if page < 3:
         return range(1, BUTTONS_PER_PAGE + 1)
-    if page > (paginator.num_pages - 3):  # show last 5 pagebuttons when viewing one of last 2 pages
-        return range(paginator.num_pages - BUTTONS_PER_PAGE + 1, paginator.num_pages + 1)
+    # show last 5 pagebuttons when viewing one of last 2 pages
+    if page > (paginator.num_pages - 3):
+        return range(paginator.num_pages - BUTTONS_PER_PAGE + 1,
+                     paginator.num_pages + 1)
     return range(max(1, page - 2), min(paginator.num_pages + 1, page + 3))
 
 
@@ -57,10 +60,14 @@ def get_pagebuttons_for_page(objects, page):
 
 class Index(View):
     def get(self, request):
-        context = {
-            'records': Race.objects.filter(time__isnull=False, rank__range=[1, 3])
-                           .order_by('-created').select_related('map', 'player')[:10]
+        flt = {
+            'time__isnull': False,
+            'rank__range': [1, 3],
         }
+        records = Race.objects.filter(**flt) \
+                              .order_by('-created') \
+                              .select_related('map', 'player')[:10]
+        context = {'records': records}
         return render(request, 'racesow/home.html', context)
 
 
@@ -69,7 +76,8 @@ class SetTimezone(View):
         return redirect('rs:home')
 
     def post(self, request, **kwargs):
-        # store posted timezone in user session object and redirect to originating page
+        # store posted timezone in user session object and redirect to
+        # originating page
         request.session['django_timezone'] = request.POST['timezone']
         return redirect(request.POST['next'])
 
@@ -85,7 +93,8 @@ class Preferences(View):
         if user_timezone:
             request.session['django_timezone'] = user_timezone
             timezone.activate(pytz.timezone(user_timezone))
-            context['feedback'] = 'Timezone has been set to {}'.format(request.session['django_timezone'])
+            context['feedback'] = 'Timezone has been set to {}'.format(
+                request.session['django_timezone'])
         return render(request, 'racesow/preferences.html', context)
 
 
@@ -100,8 +109,9 @@ class MapList(View):
         elif version == 'old':
             # compare order with valid table header orderings
             #  Name  Weapons  Races-  Playtime  DL  Long name
-            if order not in ['name', 'weapons', 'races', 'playtime', 'longname',
-                             '-name', '-weapons', '-races', '-playtime', '-longname']:
+            if order not in ['name', 'weapons', 'races', 'playtime',
+                             'longname', '-name', '-weapons', '-races',
+                             '-playtime', '-longname']:
                 order = 'name'
         else:
             raise Http404
@@ -110,7 +120,8 @@ class MapList(View):
     def get(self, request, version, **kwargs):
         context = {'version': version}
         db_filter = {}
-        maplist_url = 'rs:mln3' if version == 'new' else 'rs:mlo3'  # url to put in table <a> href
+        # url to put in table <a> href
+        maplist_url = 'rs:mln3' if version == 'new' else 'rs:mlo3'
         page = kwargs.get('page', 1)
         order = self.maplist_validate_order(kwargs.get('order', ''), version)
 
@@ -124,12 +135,14 @@ class MapList(View):
             try:
                 q = request.GET['q']
                 # redirect to different url if a GET request was passed
-                return redirect(maplist_url, order=order,  page=page, q=q.replace(' ', ''))
+                return redirect(maplist_url, order=order,  page=page,
+                                q=q.replace(' ', ''))
             except:
                 q = ''
 
         if settings.DEBUG:
-            print(u"MapList.get(version={}, order={}, page={}, q={})".format(version, order, page, q))
+            print(u"MapList.get(version={}, order={}, page={}, q={})".format(
+                version, order, page, q))
 
         if version == 'new':
             db_filter.update({'enabled': True})
@@ -139,7 +152,9 @@ class MapList(View):
                 db_order_l.append('name')
 
             # prefetch_related because tags is a many-to-many relationship
-            maps_list = Map.objects.filter(**db_filter).order_by(*db_order_l).prefetch_related('tags')
+            maps_list = Map.objects.filter(**db_filter) \
+                                   .order_by(*db_order_l) \
+                                   .prefetch_related('tags')
 
             # specify the url to put in <form> href
             context.update({'form_url': 'rs:mln'})
@@ -147,19 +162,26 @@ class MapList(View):
             db_filter.update({'status': 'enabled'})
             db_order_l = [order]
             if order.endswith('weapons') or order.endswith('races'):
-                db_order_l.append('name')  # append name as 2nd order for alphabetic ordering
+                # append name as 2nd order for alphabetic ordering
+                db_order_l.append('name')
 
-            maps_list = Mapold.objects.filter(**db_filter).order_by(*db_order_l)
+            maps_list = Mapold.objects.filter(**db_filter) \
+                                      .order_by(*db_order_l)
 
             # specify the url to put in <form> href
             context.update({'form_url': 'rs:mlo'})
 
         context.update({
-            'maps': get_page(maps_list, page),  # store paginated objects in template context
-            'maplist': maplist_url,  # version dependent url (used in table headers for sorting, page buttons, etc.)
-            'order': order,  # active object sort method
-            'query': q,  # search query (if any)
-            'pagebuttons': get_pagebuttons_for_page(maps_list, page)  # list of pagenumbers for whom we need buttons
+            # store paginated objects in template context
+            'maps': get_page(maps_list, page),
+            # version dependent url (used in table headers)
+            'maplist': maplist_url,
+            # active object sort method
+            'order': order,
+            # search query (if any)
+            'query': q,
+            # list of pagenumbers for whom we need buttons
+            'pagebuttons': get_pagebuttons_for_page(maps_list, page),
         })
         return render(request, 'racesow/maps.html', context)
 
@@ -169,12 +191,14 @@ class MapDetails(View):
         if version == 'new':
             # compare order with valid table header orderings
             if order not in ['points', 'time', 'player', 'playtime', 'date',
-                             '-points', '-time', '-player', '-playtime', '-date']:
+                             '-points', '-time', '-player', '-playtime',
+                             '-date']:
                 order = 'time'  # default
         elif version == 'old':
             # compare order with valid table header orderings
             if order not in ['points', 'time', 'player', 'onlinetime', 'date',
-                             '-points', '-time', '-player', '-onlinetime', '-date']:
+                             '-points', '-time', '-player', '-onlinetime',
+                             '-date']:
                 order = 'time'  # default
         else:
             raise Http404
@@ -182,13 +206,16 @@ class MapDetails(View):
 
     def get(self, request, version, **kwargs):
         context = {'version': version}
-        mapdetails_url = 'rs:mdn2' if version == 'new' else 'rs:mdo2'  # url to put in table <a> href
+        # url to put in table <a> href
+        mapdetails_url = 'rs:mdn2' if version == 'new' else 'rs:mdo2'
         page = kwargs.get('page', 1)
         map_id = kwargs['mapid']
-        order = self.mapdetails_validate_order(kwargs.get('order', ''), version)
+        order = self.mapdetails_validate_order(kwargs.get('order', ''),
+                                               version)
 
         if settings.DEBUG:
-            print(u"PlayerDetails.get(version={}, order={}, page={})".format(version, order, page))
+            print(u"PlayerDetails.get(version={}, order={}, page={})".format(
+                version, order, page))
 
         # retrieve version-specific map details
         if version == 'new':
@@ -201,7 +228,11 @@ class MapDetails(View):
             # try to get map object for other version based on name
             try:
                 map_other = Mapold.objects.get(name=map_.name)
-                context.update({'map_other': map_other, 'mapdetails_other': 'rs:mdo', 'version_other': 'old'})
+                context.update({
+                    'map_other': map_other,
+                    'mapdetails_other': 'rs:mdo',
+                    'version_other': 'old',
+                })
             except Mapold.DoesNotExist:
                 pass
 
@@ -212,7 +243,10 @@ class MapDetails(View):
             elif db_order.endswith('date'):
                 db_order = order.replace('date', 'created')
 
-            races_list = Race.objects.filter(map__id=map_.id).exclude(time__isnull=True).order_by(db_order).select_related('player')
+            races_list = Race.objects.filter(map__id=map_.id) \
+                                     .exclude(time__isnull=True) \
+                                     .order_by(db_order) \
+                                     .select_related('player')
 
             # celery last computation date
             context['last_run'] = map_.last_computation
@@ -238,7 +272,11 @@ class MapDetails(View):
             # try to get map object for other version based on name
             try:
                 map_other = Map.objects.get(name=map_.name)
-                context.update({'map_other': map_other, 'mapdetails_other': 'rs:mdn', 'version_other': 'new'})
+                context.update({
+                    'map_other': map_other,
+                    'mapdetails_other': 'rs:mdn',
+                    'version_other': 'new'
+                })
             except Map.DoesNotExist:
                 pass
 
@@ -251,8 +289,10 @@ class MapDetails(View):
             elif db_order.endswith('date'):
                 db_order = order.replace('date', 'created')
 
-            races_list = PlayerMap.objects.filter(map__id=map_.id)\
-                .exclude(time__isnull=True).order_by(db_order).select_related('player')
+            races_list = PlayerMap.objects.filter(map__id=map_.id) \
+                                          .exclude(time__isnull=True) \
+                                          .order_by(db_order) \
+                                          .select_related('player')
 
             # create URL to .pk3 file
             if map_.file:
@@ -263,7 +303,8 @@ class MapDetails(View):
             'mapdetails': mapdetails_url,
             'races': get_page(races_list, page),
             'order': order,
-            'pagebuttons': get_pagebuttons_for_page(races_list, page)  # list of pagenumbers for whom we need buttons
+            # list of pagenumbers for whom we need buttons
+            'pagebuttons': get_pagebuttons_for_page(races_list, page),
         })
         return render(request, 'racesow/map.html', context)
 
@@ -272,13 +313,15 @@ class PlayerList(View):
     def playerlist_validate_order(self, order, version):
         if version == 'new':
             # compare order with valid table header orderings
-            if order not in ['name', 'points', 'skill', 'maps', 'races', 'playtime',
-                             '-name', '-points', '-skill', '-maps', '-races', '-playtime']:
+            if order not in ['name', 'points', 'skill', 'maps', 'races',
+                             'playtime', '-name', '-points', '-skill', '-maps',
+                             '-races', '-playtime']:
                 order = '-races'  # default
         elif version == 'old':
             # compare order with valid table header orderings
-            if order not in ['name', 'points', 'skill', 'maps', 'races', 'playtime',
-                             '-name', '-points', '-skill', '-maps', '-races', '-playtime']:
+            if order not in ['name', 'points', 'skill', 'maps', 'races',
+                             'playtime', '-name', '-points', '-skill', '-maps',
+                             '-races', '-playtime']:
                 order = '-points'  # default
         else:
             raise Http404
@@ -286,10 +329,12 @@ class PlayerList(View):
 
     def get(self, request, version, **kwargs):
         context = {'version': version}
-        playerlist_url = 'rs:pln3' if version == 'new' else 'rs:plo3'  # url to put in table <a> href
+        # url to put in table <a> href
+        playerlist_url = 'rs:pln3' if version == 'new' else 'rs:plo3'
         db_filter = {}
         page = kwargs.get('page', 1)
-        order = self.playerlist_validate_order(kwargs.get('order', ''), version)
+        order = self.playerlist_validate_order(kwargs.get('order', ''),
+                                               version)
 
         try:
             # update filter with search query, if any
@@ -301,12 +346,14 @@ class PlayerList(View):
             try:
                 q = request.GET['q']
                 # redirect to different url if a GET request was passed
-                return redirect(playerlist_url, order=order,  page=page, q=q.replace(' ', ''))
+                return redirect(playerlist_url, order=order,  page=page,
+                                q=q.replace(' ', ''))
             except:
                 q = ''
 
         if settings.DEBUG:
-            print(u"PlayerList.get(version={}, order={}, page={}, q={})".format(version, order, page, q))
+            print(u"PlayerList.get(version={}, order={}, page={}, q={})"
+                  .format(version, order, page, q))
 
         if version == 'new':
             db_order_l = [order]
@@ -320,8 +367,12 @@ class PlayerList(View):
                 db_order_l.append('simplified')
 
             # get players matching filter and ordering criteria
-            player_list = Player.objects.filter(**db_filter).order_by(*db_order_l)\
-                .extra(select={'skill': 'IF(maps_finished >= 5, points/maps_finished/1000, 0)'})
+            extraselect = {
+                'skill': 'IF(maps_finished >= 5, points/maps_finished/1000, 0)'
+            }
+            player_list = Player.objects.filter(**db_filter) \
+                                        .order_by(*db_order_l) \
+                                        .extra(select=extraselect)
 
             # specify the url to put in <form> href
             context.update({'form_url': 'rs:pln'})
@@ -337,9 +388,14 @@ class PlayerList(View):
                 # append simplified as 2nd order for columns with equal rows
                 db_order_l.append('simplified')
 
-            # define skill column (original query: IF(`maps`>=30,`points`/`maps`,0) AS `skill`)
-            player_list = Playerold.objects.filter(**db_filter).order_by(*db_order_l)\
-                .extra(select={'skill': 'IF(maps >= 30, points/maps, 0)'})
+            # define skill column (original query:
+            # IF(`maps`>=30,`points`/`maps`,0) AS `skill`)
+            extraselect = {
+                'skill': 'IF(maps >= 30, points/maps, 0)'
+            }
+            player_list = Playerold.objects.filter(**db_filter) \
+                                           .order_by(*db_order_l) \
+                                           .extra(select=extraselect)
 
             # specify the url to put in <form> href
             context.update({'form_url': 'rs:plo'})
@@ -349,7 +405,8 @@ class PlayerList(View):
             'playerlist': playerlist_url,
             'order': order,
             'query': q,
-            'pagebuttons': get_pagebuttons_for_page(player_list, page)  # list of pagenumbers for whom we need buttons
+            # list of pagenumbers for whom we need buttons
+            'pagebuttons': get_pagebuttons_for_page(player_list, page),
         })
         return render(request, 'racesow/players.html', context)
 
@@ -360,13 +417,15 @@ class PlayerDetails(View):
             # compare order with valid table header orderings
             # Name  Time  Playtime Date
             if order not in ['name', 'points', 'time', 'playtime', 'date',
-                             '-name', '-points', '-time', '-playtime', '-date']:
+                             '-name', '-points', '-time', '-playtime',
+                             '-date']:
                 order = '-points'  # default
         elif version == 'old':
             # compare order with valid table header orderings
             # Name  Points-  Time  Playtime Date
             if order not in ['name', 'points', 'time', 'onlinetime', 'date',
-                             '-name', '-points', '-time', '-onlinetime', '-date']:
+                             '-name', '-points', '-time', '-onlinetime',
+                             '-date']:
                 order = '-points'  # default
         else:
             raise Http404
@@ -374,28 +433,33 @@ class PlayerDetails(View):
 
     def get(self, request, version, **kwargs):
         context = {'version': version}
-        playerdetails_url = 'rs:pdn3' if version == 'new' else 'rs:pdo3'  # url to put in table <a> href
+        # url to put in table <a> href
+        playerdetails_url = 'rs:pdn3' if version == 'new' else 'rs:pdo3'
         db_filter = {}
         page = kwargs.get('page', 1)
         player_id = kwargs['playerid']
-        order = self.playerdetails_validate_order(kwargs.get('order', ''), version)
+        order = self.playerdetails_validate_order(kwargs.get('order', ''),
+                                                  version)
 
         try:
             # update filter with search query, if any
             q = kwargs['q']
             if not q:  # redirect to different url if query empty
-                return redirect(playerdetails_url, playerid=player_id, order=order, page=page)
+                return redirect(playerdetails_url, playerid=player_id,
+                                order=order, page=page)
             db_filter.update({'map__name__icontains': q})
         except:
             try:
                 q = request.GET['q']
                 # redirect to different url if a GET request was passed
-                return redirect(playerdetails_url, playerid=player_id, order=order,  page=page, q=q.replace(' ', ''))
+                return redirect(playerdetails_url, playerid=player_id,
+                                order=order,  page=page, q=q.replace(' ', ''))
             except:
                 q = ''
 
         if settings.DEBUG:
-            print(u"PlayerDetails.get(version={}, order={}, page={}, q={})".format(version, order, page, q))
+            print(u"PlayerDetails.get(version={}, order={}, page={}, q={})"
+                  .format(version, order, page, q))
 
         # retrieve player-specific details
         if version == 'new':
@@ -406,11 +470,18 @@ class PlayerDetails(View):
                 return render(request, 'racesow/player.html', context)
             db_filter.update({'player__id': player_id, 'time__isnull': False})
 
-            # try to get player object(s) for other version based on simplified name.
-            # Sort by points and take the first player when there is more than 1 result.
-            player_other_list = Playerold.objects.filter(simplified=player.simplified).order_by('-points')
+            # try to get player object(s) for other version based on
+            # simplified name. Sort by points and take the first player when
+            # there is more than 1 result.
+            flt = {'simplified': player.simplified}
+            player_other_list = Playerold.objects.filter(**flt) \
+                                                 .order_by('-points')
             if player_other_list:
-                context.update({'player_other': player_other_list[0], 'playerdetails_other': 'rs:pdo', 'version_other': 'old'})
+                context.update({
+                    'player_other': player_other_list[0],
+                    'playerdetails_other': 'rs:pdo',
+                    'version_other': 'old'
+                })
 
             # translate table column to a database column
             db_order_l = [order]
@@ -422,9 +493,14 @@ class PlayerDetails(View):
                 # append time as 2nd order for columns with equal rows
                 db_order_l.append('time')
 
-            pmaps_list = Race.objects.filter(**db_filter).order_by(*db_order_l).select_related('map', 'player')
+            pmaps_list = Race.objects.filter(**db_filter) \
+                                     .order_by(*db_order_l) \
+                                     .select_related('map', 'player')
 
-            player.skill = player.get_points() / player.maps_finished if player.maps_finished else 0
+            if player.maps_finished:
+                player.skill = player.get_points() / player.maps_finished
+            else:
+                player.skill = 0
             player.pmaps = len(pmaps_list)
 
             context.update({'medals': {
@@ -443,11 +519,18 @@ class PlayerDetails(View):
                 return render(request, 'racesow/player.html', context)
             db_filter.update({'player__id': player_id, 'time__isnull': False})
 
-            # try to get player object(s) for other version based on simplified name.
-            # Sort by points and take the first player when there is more than 1 result.
-            player_other_list = Player.objects.filter(simplified=player.simplified).order_by('-points')
+            # try to get player object(s) for other version based on simplified
+            # name. Sort by points and take the first player when there is more
+            # than 1 result.
+            flt = {'simplified': player.simplified}
+            player_other_list = Player.objects.filter(**flt) \
+                                              .order_by('-points')
             if player_other_list:
-                context.update({'player_other': player_other_list[0], 'playerdetails_other': 'rs:pdn', 'version_other': 'new'})
+                context.update({
+                    'player_other': player_other_list[0],
+                    'playerdetails_other': 'rs:pdn',
+                    'version_other': 'new'
+                })
 
             # translate table column to a database column
             db_order_l = [order]
@@ -461,15 +544,21 @@ class PlayerDetails(View):
                 # append time as 2nd order for columns with equal rows
                 db_order_l.append('time')
 
-            pmaps_list = PlayerMap.objects.filter(**db_filter).order_by(*db_order_l).select_related('map', 'player')
+            pmaps_list = PlayerMap.objects.filter(**db_filter) \
+                                          .order_by(*db_order_l) \
+                                          .select_related('map', 'player')
 
+            flt = lambda p: {'player__id': player.id, 'points': p}
             context.update({'medals': {
-                'gold': len(PlayerMap.objects.filter(player__id=player.id, points=40)),
-                'silver': len(PlayerMap.objects.filter(player__id=player.id, points=34)),
-                'bronze': len(PlayerMap.objects.filter(player__id=player.id, points=31))}
+                'gold': len(PlayerMap.objects.filter(**flt(40))),
+                'silver': len(PlayerMap.objects.filter(**flt(34))),
+                'bronze': len(PlayerMap.objects.filter(**flt(31)))}
             })
 
-            player.skill = float(player.points) / player.maps if player.maps else 0
+            if player.maps:
+                player.skill = float(player.points) / player.maps
+            else:
+                player.skill = 0
             player.pmaps = len(pmaps_list)
 
             # specify the url to put in <form> href
@@ -481,6 +570,7 @@ class PlayerDetails(View):
             'playerdetails': playerdetails_url,
             'order': order,
             'query': q,
-            'pagebuttons': get_pagebuttons_for_page(pmaps_list, page)  # list of pagenumbers for whom we need buttons
+            # list of pagenumbers for whom we need buttons
+            'pagebuttons': get_pagebuttons_for_page(pmaps_list, page),
         })
         return render(request, 'racesow/player.html', context)
