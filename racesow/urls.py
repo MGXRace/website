@@ -4,15 +4,16 @@ from rest_framework import routers
 from racesow.views.default import NotFound
 
 import racesow.views.api as api
+import racesow.views.drf as drf
 import racesow.views.site as website
 import racesow.views.wmm as wmm
 
 router = routers.DefaultRouter()
-router.register(r'players', api.PlayerViewSet)
-router.register(r'maps', api.MapViewSet)
-router.register(r'tags', api.TagViewSet)
-router.register(r'races', api.RaceViewSet)
-router.register(r'checkpoints', api.CheckpointViewSet)
+router.register(r'players', drf.PlayerViewSet)
+router.register(r'maps', drf.MapViewSet)
+router.register(r'tags', drf.TagViewSet)
+router.register(r'races', drf.RaceViewSet)
+router.register(r'checkpoints', drf.CheckpointViewSet)
 
 urlpatterns = patterns(
     '',

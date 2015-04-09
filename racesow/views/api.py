@@ -10,15 +10,6 @@ from django.http import HttpResponse, Http404
 from django.utils import timezone
 from django.views.generic import View
 
-from rest_framework import viewsets
-from racesow.serializers import (
-    PlayerSerializer,
-    MapSerializer,
-    TagSerializer,
-    RaceSerializer,
-    CheckpointSerializer,
-)
-
 from racesow.models import Map, Tag, Player, Race, RaceHistory, Checkpoint
 from racesow.serializers import mapSerializer, playerSerializer, raceSerializer
 from racesow.services import get_record, is_default_username
@@ -34,31 +25,6 @@ __author__ = 'Mark'
 def _b64decode(msg):
     """Decode a base64 encoded query parameter"""
     return base64.b64decode(msg.encode('ascii'), '-_')
-
-
-class PlayerViewSet(viewsets.ModelViewSet):
-    queryset = Player.objects.all()
-    serializer_class = PlayerSerializer
-
-
-class MapViewSet(viewsets.ModelViewSet):
-    queryset = Map.objects.all()
-    serializer_class = MapSerializer
-
-
-class TagViewSet(viewsets.ModelViewSet):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-
-
-class RaceViewSet(viewsets.ModelViewSet):
-    queryset = Race.objects.all()
-    serializer_class = RaceSerializer
-
-
-class CheckpointViewSet(viewsets.ModelViewSet):
-    queryset = Checkpoint.objects.all()
-    serializer_class = CheckpointSerializer
 
 
 class APIMapList(View):
