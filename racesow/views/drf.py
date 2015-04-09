@@ -14,6 +14,7 @@ class MapViewSet(viewsets.ModelViewSet):
 
 
 class TagViewSet(viewsets.ModelViewSet):
+    lookup_field = 'name'
     queryset = mod.Tag.objects.all()
     serializer_class = ser.TagSerializer
 

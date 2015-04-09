@@ -209,3 +209,93 @@ class APIAuthTests(APITestCase):
 
         response = self.client.get(apiroot + '/players/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class APITagTests(APITestCase):
+    """Test Tag API endpoint
+
+    This serves as the test to ensure basic rest-framework functionality
+    works as expected. Other endpoint tests should focus on endpoint specific
+    functionality.
+    """
+
+    def setUp(self):
+        self.user = User.objects.create_superuser(**cred)
+        self.server = models.Server.objects.create(user=self.user)
+        self.client.login(**cred)
+
+        tags = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+                'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'foutreen',
+                'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen',
+                'twenty']
+        models.Tag.objects.bulk_create([
+            models.Tag(name=name) for name in tags
+        ])
+
+    def tearDown(self):
+        self.client.logout()
+        self.client.credentials()
+
+    def test_list_get(self):
+        """It should paginate and give the first 10 tags"""
+        response = self.client.get(apiroot + '/tags/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['next'])
+        self.assertFalse(response.data['previous'])
+        self.assertEqual(response.data['count'], 20)
+        self.assertEqual(len(response.data['results']), 10)
+
+    def test_list_post(self):
+        """It should return a new tag"""
+        tagdata = {'name': 'new tag'}
+        response = self.client.post(apiroot + '/tags/', tagdata, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data, tagdata)
+        self.assertTrue(models.Tag.objects.get(**tagdata))
+
+    def test_detail_get(self):
+        """It should fetch a new tag"""
+        response = self.client.get(apiroot + '/tags/one/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {'name': 'one'})
+
+    def test_detail_put(self):
+        """It should update an existing tag"""
+        tagdata = {'name': 'new tag'}
+        response = self.client.put(
+            apiroot + '/tags/one/',
+            tagdata,
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, tagdata)
+        self.assertTrue(models.Tag.objects.get(**tagdata))
+        with self.assertRaises(models.Tag.DoesNotExist):
+            models.Tag.objects.get(name='one')
+
+    def test_detail_patch(self):
+        """It should update an existing tag"""
+        tagdata = {'name': 'new tag'}
+        response = self.client.patch(
+            apiroot + '/tags/one/',
+            tagdata,
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, tagdata)
+        self.assertTrue(models.Tag.objects.get(**tagdata))
+        with self.assertRaises(models.Tag.DoesNotExist):
+            models.Tag.objects.get(name='one')
+
+    def test_detail_delete(self):
+        """It should delete an existing tag"""
+        response = self.client.delete(apiroot + '/tags/one/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        with self.assertRaises(models.Tag.DoesNotExist):
+            models.Tag.objects.get(name='one')
