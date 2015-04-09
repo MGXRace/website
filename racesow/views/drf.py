@@ -5,12 +5,45 @@ from racesow import utils
 from rest_framework import viewsets
 
 
+##########
+# Mixins
+##########
+
+
+class B64Lookup(object):
+    """Mixin class to lookup object on base64 encoded key"""
+
+    def get_object(self):
+        """Get the map specified for the detail view"""
+        queryset = self.filter_queryset(self.get_queryset())
+
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        assert lookup_url_kwarg in self.kwargs, (
+            'Expected view %s to be called with a URL keyword argument '
+            'named "%s". Fix your URL conf, or set the `.lookup_field` '
+            'attribute on the view correctly.' %
+            (self.__class__.__name__, lookup_url_kwarg)
+        )
+
+        lookup_value = utils.b64param(self.kwargs, lookup_url_kwarg)
+        flt = {self.lookup_field: lookup_value}
+        obj = get_object_or_404(queryset, **flt)
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
+
+##########
+# Views
+##########
+
+
 class PlayerViewSet(viewsets.ModelViewSet):
     queryset = mod.Player.objects.all()
     serializer_class = ser.PlayerSerializer
 
 
-class MapViewSet(viewsets.ModelViewSet):
+class MapViewSet(B64Lookup, viewsets.ModelViewSet):
     """ViewSet for maps/ REST endpoint
 
     Routes:
@@ -34,6 +67,7 @@ class MapViewSet(viewsets.ModelViewSet):
       `tags` must be a urlsafe-base64 encoded json list. E.g.
       `["pg", "rl"]`
     """
+    lookup_field = 'name'
     queryset = mod.Map.objects.all()
     serializer_class = ser.MapSerializer
     ordering_fields = ('name', 'races', 'playtime', 'created', 'oneliner')
@@ -64,24 +98,6 @@ class MapViewSet(viewsets.ModelViewSet):
         if 'rand' in self.request.query_params:
             queryset = queryset.order_by('?')
         return queryset
-
-    def get_object(self):
-        """Get the map specified for the detail view"""
-        queryset = self.filter_queryset(self.get_queryset())
-
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        assert lookup_url_kwarg in self.kwargs, (
-            'Expected view %s to be called with a URL keyword argument '
-            'named "%s". Fix your URL conf, or set the `.lookup_field` '
-            'attribute on the view correctly.' %
-            (self.__class__.__name__, lookup_url_kwarg)
-        )
-
-        name = utils.b64param(self.kwargs, lookup_url_kwarg)
-        obj = get_object_or_404(queryset, name=name)
-        self.check_object_permissions(self.request, obj)
-
-        return obj
 
 
 class TagViewSet(viewsets.ModelViewSet):
