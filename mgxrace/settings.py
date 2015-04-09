@@ -149,6 +149,8 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
+    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.OrderingFilter',),
+    'ORDERING_PARAM': 'sort',
     'PAGE_SIZE': 10,
 }
 
