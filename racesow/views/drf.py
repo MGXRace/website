@@ -3,6 +3,7 @@ import racesow.serializers as ser
 from django.shortcuts import get_object_or_404
 from racesow import utils
 from rest_framework import viewsets
+from rest_framework.response import Response
 
 
 ##########
@@ -38,9 +39,54 @@ class B64Lookup(object):
 ##########
 
 
-class PlayerViewSet(viewsets.ModelViewSet):
+class PlayerViewSet(B64Lookup, viewsets.ModelViewSet):
+    """ViewSet for players/ REST endpoint
+
+    Routes:
+
+    - List view: `players/`
+    - Detail view: `players/{simplified}`
+
+    Arguments:
+
+    - `simplified` The player's name without color codes as an urlsafe-base64
+      encoded string
+
+    Supported query parameters:
+
+    - `sort={field}` Sort the results by the given field, prefix field with
+      a "-" to reverse the sort.
+    - `mid={id}` If provided, an extra "record" field will be added to the
+      response data with the players best race on the map with `id`
+    """
+    lookup_field = 'simplified'
     queryset = mod.Player.objects.all()
     serializer_class = ser.PlayerSerializer
+    ordering_fields = (
+        'admin', 'simplified', 'playtime', 'races', 'maps', 'maps_finished',
+        'points',
+    )
+    ordering = ('simplified',)
+
+    def retrieve(self, request, *args, **kwargs):
+        """Detail view for player
+
+        This needs to be overridden to add record field.
+        """
+        instance = self.get_object()
+
+        if 'mid' in request.query_params:
+            flt = {
+                'time__isnull': False,
+                'map__id': request.query_params['mid']
+            }
+            try:
+                instance.record = instance.race_set.get(**flt)
+            except mod.Race.DoesNotExist:
+                instance.record = None
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 class MapViewSet(B64Lookup, viewsets.ModelViewSet):
@@ -48,12 +94,12 @@ class MapViewSet(B64Lookup, viewsets.ModelViewSet):
 
     Routes:
 
-    - List view: `apiroot/maps/`
-    - Detail view: `apiroot/maps/{mapname}/`
+    - List view: `maps/`
+    - Detail view: `maps/{name}/`
 
     Arguments:
 
-    - `mapname` A urlsafe-base64 encoded string
+    - `name` A urlsafe-base64 encoded string
 
     Supported query parameters:
 

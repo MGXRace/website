@@ -3,12 +3,42 @@ from rest_framework import serializers
 from racesow.models import Player, Map, Tag, Race, Checkpoint
 
 
+class CheckpointSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Checkpoint
+        fields = (
+            'id',
+            'race',
+            'number',
+            'time',
+        )
+
+
+class RaceSerializer(serializers.ModelSerializer):
+    checkpoints = CheckpointSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Race
+        fields = (
+            'id',
+            'player',
+            'map',
+            'server',
+            'time',
+            'playtime',
+            'points',
+            'created',
+            'checkpoints',
+        )
+
+
 class PlayerSerializer(serializers.ModelSerializer):
+    record = RaceSerializer(read_only=True)
+
     class Meta:
         model = Player
         fields = (
             'id',
-            'username',
             'admin',
             'name',
             'simplified',
@@ -17,6 +47,7 @@ class PlayerSerializer(serializers.ModelSerializer):
             'maps',
             'maps_finished',
             'points',
+            'record',
         )
 
 
@@ -48,35 +79,6 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = (
             'name',
-        )
-
-
-class CheckpointSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Checkpoint
-        fields = (
-            'id',
-            'race',
-            'number',
-            'time',
-        )
-
-
-class RaceSerializer(serializers.ModelSerializer):
-    checkpoints = CheckpointSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = Race
-        fields = (
-            'id',
-            'player',
-            'map',
-            'server',
-            'time',
-            'playtime',
-            'points',
-            'created',
-            'checkpoints',
         )
 
 

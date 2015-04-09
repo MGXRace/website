@@ -377,3 +377,52 @@ class APIMapTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'Map Two')
+
+
+class APIPlayerTests(APITestCase):
+    """Test Player API endpoint"""
+
+    def setUp(self):
+        self.user = User.objects.create_superuser(**cred)
+        self.server = models.Server.objects.create(user=self.user)
+        self.client.login(**cred)
+
+        m1 = models.Map.objects.create(name='Map One')
+        m2 = models.Map.objects.create(name='Map Two')
+
+        p1 = models.Player.objects.create(username='P1', name='P1',
+                                          simplified='P1')
+        p2 = models.Player.objects.create(username='P2', name='P2',
+                                          simplified='P2')
+
+        models.Race.objects.create(player=p1, map=m1, time=1)
+        models.Race.objects.create(player=p1, map=m2, time=2)
+        models.Race.objects.create(player=p2, map=m1, time=3)
+
+    def tearDown(self):
+        self.client.logout()
+        self.client.credentials()
+
+    def test_detail_record(self):
+        """It should attach a record if asked"""
+        # No record field if mid not supplied
+        n1 = utils.b64encode('P1')
+        response = self.client.get(apiroot + '/players/' + n1 + '/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn('record', response.data)
+
+        # correct record if asked
+        response = self.client.get(apiroot + '/players/' + n1 + '/?mid=1')
+        data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data['record']['player'], data['id'])
+        self.assertEqual(data['record']['map'], 1)
+
+        # null record if not found
+        response = self.client.get(apiroot + '/players/' + n1 + '/?mid=8')
+        data = response.data
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data['record'], None)
