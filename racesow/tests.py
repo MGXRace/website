@@ -238,14 +238,15 @@ class APITagTests(APITestCase):
         self.client.credentials()
 
     def test_list_get(self):
-        """It should paginate and give the first 10 tags"""
-        response = self.client.get(apiroot + '/tags/')
+        """It should paginate and give the first few tags"""
+        response = self.client.get(apiroot + '/tags/?page_size=10')
+        data = response.data
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(response.data['next'])
-        self.assertFalse(response.data['previous'])
-        self.assertEqual(response.data['count'], 20)
-        self.assertEqual(len(response.data['results']), 10)
+        self.assertTrue(data['next'])
+        self.assertFalse(data['previous'])
+        self.assertEqual(data['count'], 20)
+        self.assertEqual(len(data['results']), 10)
 
     def test_list_post(self):
         """It should return a new tag"""
@@ -258,10 +259,10 @@ class APITagTests(APITestCase):
 
     def test_list_sort(self):
         """It should sort by name"""
-        response = self.client.get(apiroot + '/tags/?page=2')
+        response = self.client.get(apiroot + '/tags/')
         tags1 = response.data['results']
 
-        response = self.client.get(apiroot + '/tags/?page=1&sort=-name')
+        response = self.client.get(apiroot + '/tags/?sort=-name')
         tags2 = response.data['results']
 
         self.assertEqual(tags1[::-1], tags2)

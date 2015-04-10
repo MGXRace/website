@@ -151,7 +151,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
     'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.OrderingFilter',),
     'ORDERING_PARAM': 'sort',
-    'PAGE_SIZE': 10,
+    'PAGE_SIZE': 50,
+    'PAGINATE_BY_PARAM': 'page_size',
+    'MAX_PAGINATE_BY': 100,
 }
 
 
