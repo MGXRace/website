@@ -58,6 +58,8 @@ class PlayerViewSet(B64Lookup, viewsets.ModelViewSet):
       a "-" to reverse the sort.
     - `mid={id}` If provided, an extra "record" field will be added to the
       response data with the players best race on the map with `id`
+    - `simplified={simplified}` Filter results to players whose simplified name
+      matches. `simplified` must be a urlsafe-base64 encoded string.
     """
     lookup_field = 'username'
     queryset = mod.Player.objects.all()
@@ -67,6 +69,16 @@ class PlayerViewSet(B64Lookup, viewsets.ModelViewSet):
         'maps_finished', 'points',
     )
     ordering = ('simplified',)
+
+    def get_queryset(self):
+        """Get the queryset for the players"""
+        queryset = super(PlayerViewSet, self).get_queryset()
+
+        if 'simplified' in self.request.query_params:
+            value = utils.b64param(self.request.query_params, 'simplified')
+            queryset = queryset.filter(simplified__iexact=value)
+
+        return queryset
 
     def retrieve(self, request, *args, **kwargs):
         """Detail view for player

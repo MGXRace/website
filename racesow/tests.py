@@ -403,6 +403,16 @@ class APIPlayerTests(APITestCase):
         self.client.logout()
         self.client.credentials()
 
+    def test_list_simplified(self):
+        """It should filter by simplified name"""
+        n1 = utils.b64encode('P2')
+        response = self.client.get(apiroot + '/players/?simplified=' + n1 +
+                                   '/')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+        self.assertEqual(response.data['results'][0]['simplified'], 'P2')
+
     def test_detail_record(self):
         """It should attach a record if asked"""
         # No record field if mid not supplied
