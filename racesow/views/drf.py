@@ -45,11 +45,11 @@ class PlayerViewSet(B64Lookup, viewsets.ModelViewSet):
     Routes:
 
     - List view: `players/`
-    - Detail view: `players/{simplified}`
+    - Detail view: `players/{username}`
 
     Arguments:
 
-    - `simplified` The player's name without color codes as an urlsafe-base64
+    - `username` The player's warsow.net username as an urlsafe-base64
       encoded string
 
     Supported query parameters:
@@ -59,12 +59,12 @@ class PlayerViewSet(B64Lookup, viewsets.ModelViewSet):
     - `mid={id}` If provided, an extra "record" field will be added to the
       response data with the players best race on the map with `id`
     """
-    lookup_field = 'simplified'
+    lookup_field = 'username'
     queryset = mod.Player.objects.all()
     serializer_class = ser.PlayerSerializer
     ordering_fields = (
-        'admin', 'simplified', 'playtime', 'races', 'maps', 'maps_finished',
-        'points',
+        'username', 'admin', 'simplified', 'playtime', 'races', 'maps',
+        'maps_finished', 'points',
     )
     ordering = ('simplified',)
 

@@ -39,6 +39,7 @@ class PlayerSerializer(serializers.ModelSerializer):
         model = Player
         fields = (
             'id',
+            'username',
             'admin',
             'name',
             'simplified',
