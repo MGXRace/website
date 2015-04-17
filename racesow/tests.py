@@ -428,7 +428,7 @@ class APIPlayerTests(APITestCase):
         data = response.data
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(data['record']['player'], data['id'])
+        self.assertEqual(data['record']['player']['id'], data['id'])
         self.assertEqual(data['record']['map'], 1)
 
         # null record if not found
@@ -437,3 +437,52 @@ class APIPlayerTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(data['record'], None)
+
+
+class APIRaceTests(APITestCase):
+    """Test Race API endpoint"""
+
+    def setUp(self):
+        self.user = User.objects.create_superuser(**cred)
+        self.server = models.Server.objects.create(user=self.user)
+        self.client.login(**cred)
+
+        self.m1 = models.Map.objects.create(name='Map One')
+        self.m2 = models.Map.objects.create(name='Map Two')
+
+        self.p1 = models.Player.objects.create(username='P1', name='P1',
+                                               simplified='P1')
+        self.p2 = models.Player.objects.create(username='P2', name='P2',
+                                               simplified='P2')
+
+        self.r1 = models.Race.objects.create(player=self.p1, map=self.m1,
+                                             time=1)
+        models.Race.objects.create(player=self.p1, map=self.m2, time=2)
+        models.Race.objects.create(player=self.p2, map=self.m1, time=3)
+
+        for t in range(3):
+            models.Checkpoint.objects.create(race=self.r1, number=t, time=t)
+
+    def tearDown(self):
+        self.client.logout()
+        self.client.credentials()
+
+    def test_list_filter(self):
+        """It should filter by map pk and player pk"""
+        url = '{0}/races/?map={1}'.format(apiroot, self.m1.pk)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 2)
+
+        url = '{0}/races/?map={1}&player={2}'.format(apiroot, self.m1.pk,
+                                                     self.p1.pk)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 1)
+
+    def test_detail_checkpoint(self):
+        """It should attach checkpoints if they exist"""
+        url = '{0}/races/{1}/'.format(apiroot, self.r1.pk)
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

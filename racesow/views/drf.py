@@ -167,8 +167,47 @@ class TagViewSet(viewsets.ModelViewSet):
 
 
 class RaceViewSet(viewsets.ModelViewSet):
+    """ViewSet for races/ REST endpoint
+
+    Routes:
+
+    - List view: `races/`
+    - Detail view: `races/{pk}/`
+
+    Arguments:
+
+    - `pk` id number of the race
+
+    Supported query parameters:
+
+    - `sort={field}` Sort the results by the given field, prefix field with
+      a "-" to reverse the sort.
+    - `map={pk}` Filter results to races on a specific map
+    - `player={pk}` Filter results to races by a specific player
+    """
     queryset = mod.Race.objects.all()
     serializer_class = ser.RaceSerializer
+    ordering_fields = (
+        'player__simplified', 'map__name', 'server__name', 'time', 'playtime',
+        'points', 'rank', 'created', 'last_played',
+    )
+    ordering = ('time',)
+
+    def get_queryset(self):
+        """Get the queryset for the races"""
+        queryset = super(RaceViewSet, self).get_queryset()
+
+        mpk = self.request.query_params.get('map', None)
+        if mpk:
+            mpk = utils.clean_pk(mod.Map, mpk, 'Invalid map key: {0}')
+            queryset = queryset.filter(map__pk=mpk)
+
+        ppk = self.request.query_params.get('player', None)
+        if ppk:
+            ppk = utils.clean_pk(mod.Player, ppk, 'Invalid player key: {0}')
+            queryset = queryset.filter(player__pk=ppk)
+
+        return queryset
 
 
 class CheckpointViewSet(viewsets.ModelViewSet):

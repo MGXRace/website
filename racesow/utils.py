@@ -3,8 +3,9 @@ import base64
 import hashlib
 import json
 import re
+from django.core.exceptions import ValidationError
 from django.utils.html import escape
-from rest_framework.exceptions import ParseError
+from rest_framework.exceptions import NotFound, ParseError
 
 
 colorcode_regex = re.compile(r'(\^[0-9])')
@@ -195,3 +196,12 @@ def b64encode(msg):
 def jsonencode(msg):
     """Encode a object to a base64 encoded json message"""
     return b64encode(json.dumps(msg))
+
+
+def clean_pk(model, value, errmsg):
+    """Clean the pk value for a model"""
+    try:
+        value = model._meta.pk.to_python(value)
+    except ValidationError as e:
+        raise NotFound(errmsg.format(*e.messages))
+    return value

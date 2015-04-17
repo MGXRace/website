@@ -3,6 +3,21 @@ from rest_framework import serializers
 from racesow.models import Player, Map, Tag, Race, Checkpoint
 
 
+class PlayerLiteSerializer(serializers.ModelSerializer):
+    """Minimal serializer for Player model
+
+    Intended to nest Players in other serializers.
+    """
+
+    class Meta:
+        model = Player
+        fields = (
+            'id',
+            'name',
+            'simplified',
+        )
+
+
 class CheckpointSerializer(serializers.ModelSerializer):
     class Meta:
         model = Checkpoint
@@ -15,6 +30,7 @@ class CheckpointSerializer(serializers.ModelSerializer):
 
 
 class RaceSerializer(serializers.ModelSerializer):
+    player = PlayerLiteSerializer()
     checkpoints = CheckpointSerializer(many=True, read_only=True)
 
     class Meta:
