@@ -27,6 +27,141 @@ cred = {
 }
 
 
+class RSAPITest(object):
+    """Mixin to provide sample data for API Tests"""
+
+    def setUp(self):
+        self.user = User.objects.create_superuser(**cred)
+        self.server = models.Server.objects.create(user=self.user)
+        self.client.login(**cred)
+
+        tags = [
+            {'name': 'strafe'},
+            {'name': 'rocket'},
+            {'name': 'plasma'},
+            {'name': 'freestyle'},
+            {'name': 'length:medium'},
+        ]
+        self.tags = [models.Tag.objects.create(**d) for d in tags]
+
+        maps = [
+            {'name': 'coldrun'},
+            {'name': '0ups_beta2a'},
+            {'name': 'gpl-arcaon'},
+            {'name': 'pornstar-slopin'},
+            {'name': 'gu3#8-bomb'},
+        ]
+        self.maps = [models.Map.objects.create(**d) for d in maps]
+
+        map_tags = [
+            [1],
+            [3],
+            [0, 4],
+            [0, 4],
+            [2, 4],
+        ]
+        for map_, tagset in zip(self.maps, map_tags):
+            map_.tags = [self.tags[i] for i in tagset]
+
+        players = [
+            {
+                'username': 'ale',
+                'admin': True,
+                'name': 'o^0_^7O a^9l^0e^7',
+                'simplified': 'o_O ale',
+            },
+            {
+                'username': 'murk',
+                'admin': True,
+                'name': 'murk',
+                'simplified': 'murk',
+            },
+            {
+                'username': 'pink',
+                'admin': True,
+                'name': '^9sjn^0|^4Pink',
+                'simplified': 'sjn|Pink',
+            },
+            {
+                'username': 'karl',
+                'admin': True,
+                'name': 'o^2_^7O ka^2r^7l^7',
+                'simplified': 'o_O karl',
+            },
+        ]
+        self.players = [models.Player.objects.create(**d) for d in players]
+
+        races = [
+            [ # ale
+                {
+                    'map': 0,
+                    'time': 11943,
+                },
+                {
+                    'map': 2,
+                    'time': 29177,
+                },
+                {
+                    'map': 3,
+                    'time': None,
+                },
+            ],
+            [ # murk
+                {
+                    'map': 0,
+                    'time': 15728,
+                },
+                {
+                    'map': 2,
+                    'time': None,
+                },
+            ],
+            [ # pink
+                {
+                    'map': 0,
+                    'time': 17482,
+                },
+                {
+                    'map': 2,
+                    'time': 48271,
+                },
+                {
+                    'map': 3,
+                    'time': 12347,
+                },
+            ],
+            [ # karl
+            ],
+        ]
+        self.races = []
+        for player, race_set in zip(self.players, races):
+            for race in race_set:
+                race['map'] = self.maps[race['map']]
+                race['player'] = player
+                self.races.append(models.Race.objects.create(**race))
+
+        checkpoints = [
+            [(0, 1234), (2, 2456), (4, 5678)],
+            [(1, 3869)],
+            [],
+            [],
+            [],
+            [(2, 1234), (1, 2456), (0, 5678)],
+            [(2, 2456)],
+            [(1, 1234), (2, 2456)],
+        ]
+        self.checkpoints = []
+        for race, checkpoint_set in zip(self.races, checkpoints):
+            self.checkpoints.extend([
+                models.Checkpoint.objects.create(race=race, number=n, time=t)
+                for n, t in checkpoint_set
+            ])
+
+    def tearDown(self):
+        self.client.logout()
+        self.client.credentials()
+
+
 class MapMethodTests(TestCase):
     def setUp(self):
         # settings.configure()
@@ -212,7 +347,7 @@ class APIAuthTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
-class APITagTests(APITestCase):
+class APITagTests(RSAPITest, APITestCase):
     """Test Tag API endpoint
 
     This serves as the test to ensure basic rest-framework functionality
@@ -220,33 +355,16 @@ class APITagTests(APITestCase):
     functionality.
     """
 
-    def setUp(self):
-        self.user = User.objects.create_superuser(**cred)
-        self.server = models.Server.objects.create(user=self.user)
-        self.client.login(**cred)
-
-        tags = ['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
-                'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'foutreen',
-                'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen',
-                'twenty']
-        models.Tag.objects.bulk_create([
-            models.Tag(name=name) for name in tags
-        ])
-
-    def tearDown(self):
-        self.client.logout()
-        self.client.credentials()
-
     def test_list_get(self):
         """It should paginate and give the first few tags"""
-        response = self.client.get(apiroot + '/tags/?page_size=10')
+        response = self.client.get(apiroot + '/tags/?page_size=3')
         data = response.data
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(data['next'])
         self.assertFalse(data['previous'])
-        self.assertEqual(data['count'], 20)
-        self.assertEqual(len(data['results']), 10)
+        self.assertEqual(data['count'], len(self.tags))
+        self.assertEqual(len(data['results']), 3)
 
     def test_list_post(self):
         """It should return a new tag"""
@@ -269,16 +387,18 @@ class APITagTests(APITestCase):
 
     def test_detail_get(self):
         """It should fetch a new tag"""
-        response = self.client.get(apiroot + '/tags/one/')
+        name = self.tags[0].name
+        response = self.client.get('{0}/tags/{1}/'.format(apiroot, name))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data, {'name': 'one'})
+        self.assertEqual(response.data, {'name': name})
 
     def test_detail_put(self):
         """It should update an existing tag"""
+        oldname = self.tags[0].name
         tagdata = {'name': 'new tag'}
         response = self.client.put(
-            apiroot + '/tags/one/',
+            '{0}/tags/{1}/'.format(apiroot, oldname),
             tagdata,
             format='json'
         )
@@ -287,13 +407,14 @@ class APITagTests(APITestCase):
         self.assertEqual(response.data, tagdata)
         self.assertTrue(models.Tag.objects.get(**tagdata))
         with self.assertRaises(models.Tag.DoesNotExist):
-            models.Tag.objects.get(name='one')
+            models.Tag.objects.get(name=oldname)
 
     def test_detail_patch(self):
         """It should update an existing tag"""
+        oldname = self.tags[0].name
         tagdata = {'name': 'new tag'}
         response = self.client.patch(
-            apiroot + '/tags/one/',
+            '{0}/tags/{1}/'.format(apiroot, oldname),
             tagdata,
             format='json'
         )
@@ -302,62 +423,46 @@ class APITagTests(APITestCase):
         self.assertEqual(response.data, tagdata)
         self.assertTrue(models.Tag.objects.get(**tagdata))
         with self.assertRaises(models.Tag.DoesNotExist):
-            models.Tag.objects.get(name='one')
+            models.Tag.objects.get(name=oldname)
 
     def test_detail_delete(self):
         """It should delete an existing tag"""
-        response = self.client.delete(apiroot + '/tags/one/')
+        name = self.tags[0].name
+        response = self.client.delete('{0}/tags/{1}/'.format(apiroot, name))
 
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         with self.assertRaises(models.Tag.DoesNotExist):
-            models.Tag.objects.get(name='one')
+            models.Tag.objects.get(name=name)
 
 
-class APIMapTests(APITestCase):
+class APIMapTests(RSAPITest, APITestCase):
     """Test Map API endpoint"""
-
-    def setUp(self):
-        self.user = User.objects.create_superuser(**cred)
-        self.server = models.Server.objects.create(user=self.user)
-        self.client.login(**cred)
-
-        t1 = models.Tag.objects.create(name='one')
-        t2 = models.Tag.objects.create(name='two')
-
-        m1 = models.Map.objects.create(name='Map One')
-        m2 = models.Map.objects.create(name='Map Two')
-        models.Map.objects.create(name='Map Three')
-        m1.tags.add(t1, t2)
-        m2.tags.add(t1)
-
-    def tearDown(self):
-        self.client.logout()
-        self.client.credentials()
 
     def test_list_regex(self):
         """It should filter on a name regex"""
-        pattern = utils.b64encode('o$')
-        response = self.client.get(apiroot + '/maps/?pattern=' + pattern)
+        response = self.client.get(
+            '{0}/maps/?pattern={1}'.format(apiroot, utils.b64encode('n$'))
+        )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
-        self.assertEqual(response.data['results'][0]['name'], 'Map Two')
+        self.assertEqual(len(response.data['results']), 3)
+        self.assertEqual(response.data['results'][0]['name'], 'coldrun')
 
     def test_list_tags(self):
         """It should return maps that contain specified tags"""
-        # One map has both tags 'one' and 'two'
-        tags = utils.jsonencode(['one', 'two'])
-        response = self.client.get(apiroot + '/maps/?tags=' + tags)
-
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 1)
-
-        # Two maps are tagged with 'one'
-        tags = utils.jsonencode(['one'])
-        response = self.client.get(apiroot + '/maps/?tags=' + tags)
+        # Two maps have both tags 'strafe' and 'length:medium'
+        tags = utils.jsonencode(['strafe', 'length:medium'])
+        response = self.client.get('{0}/maps/?tags={1}'.format(apiroot, tags))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 2)
+
+        # Three maps are tagged with 'length:medium'
+        tags = utils.jsonencode(['length:medium'])
+        response = self.client.get(apiroot + '/maps/?tags=' + tags)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['results']), 3)
 
     @unittest.expectedFailure
     def test_list_rand(self):
@@ -368,121 +473,83 @@ class APIMapTests(APITestCase):
         response = self.client.get(apiroot + '/maps/?rand')
         order2 = [m['name'] for m in response.data['results']]
 
-        # This will fail with probability 1/6
+        # This will fail with probability 1/len(self.maps)
         self.assertNotEqual(order1, order2)
 
     def test_detail_get(self):
         """It should lookup maps on b64 encoded name"""
-        name = utils.b64encode('Map Two')
-        response = self.client.get(apiroot + '/maps/' + name + '/')
+        name = utils.b64encode('coldrun')
+        response = self.client.get('{0}/maps/{1}/'.format(apiroot, name))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['name'], 'Map Two')
+        self.assertEqual(response.data['name'], 'coldrun')
 
 
-class APIPlayerTests(APITestCase):
+class APIPlayerTests(RSAPITest, APITestCase):
     """Test Player API endpoint"""
-
-    def setUp(self):
-        self.user = User.objects.create_superuser(**cred)
-        self.server = models.Server.objects.create(user=self.user)
-        self.client.login(**cred)
-
-        m1 = models.Map.objects.create(name='Map One')
-        m2 = models.Map.objects.create(name='Map Two')
-
-        p1 = models.Player.objects.create(username='P1', name='P1',
-                                          simplified='P1')
-        p2 = models.Player.objects.create(username='P2', name='P2',
-                                          simplified='P2')
-
-        models.Race.objects.create(player=p1, map=m1, time=1)
-        models.Race.objects.create(player=p1, map=m2, time=2)
-        models.Race.objects.create(player=p2, map=m1, time=3)
-
-    def tearDown(self):
-        self.client.logout()
-        self.client.credentials()
 
     def test_list_simplified(self):
         """It should filter by simplified name"""
-        n1 = utils.b64encode('P2')
-        response = self.client.get(apiroot + '/players/?simplified=' + n1 +
-                                   '/')
+        response = self.client.get('{0}/players/?simplified={1}'.format(
+            apiroot, utils.b64encode('o_O ale')
+        ))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
-        self.assertEqual(response.data['results'][0]['simplified'], 'P2')
+        self.assertEqual(response.data['results'][0]['simplified'], 'o_O ale')
 
     def test_detail_record(self):
         """It should attach a record if asked"""
         # No record field if mid not supplied
-        n1 = utils.b64encode('P1')
-        response = self.client.get(apiroot + '/players/' + n1 + '/')
+        response = self.client.get('{0}/players/{1}/'.format(
+            apiroot, utils.b64encode('ale'), self.maps[0].pk
+        ))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertNotIn('record', response.data)
 
         # correct record if asked
-        response = self.client.get(apiroot + '/players/' + n1 + '/?mid=1')
+        response = self.client.get('{0}/players/{1}/?mid={2}'.format(
+            apiroot, utils.b64encode('ale'), self.maps[0].pk
+        ))
         data = response.data
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(data['record']['player']['id'], data['id'])
-        self.assertEqual(data['record']['map'], 1)
+        self.assertEqual(data['record']['player']['simplified'], 'o_O ale')
+        self.assertEqual(data['record']['map'], self.maps[0].pk)
 
         # null record if not found
-        response = self.client.get(apiroot + '/players/' + n1 + '/?mid=8')
+        response = self.client.get('{0}/players/{1}/?mid={2}'.format(
+            apiroot, utils.b64encode('ale'), self.maps[1].pk
+        ))
         data = response.data
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(data['record'], None)
 
 
-class APIRaceTests(APITestCase):
+class APIRaceTests(RSAPITest, APITestCase):
     """Test Race API endpoint"""
-
-    def setUp(self):
-        self.user = User.objects.create_superuser(**cred)
-        self.server = models.Server.objects.create(user=self.user)
-        self.client.login(**cred)
-
-        self.m1 = models.Map.objects.create(name='Map One')
-        self.m2 = models.Map.objects.create(name='Map Two')
-
-        self.p1 = models.Player.objects.create(username='P1', name='P1',
-                                               simplified='P1')
-        self.p2 = models.Player.objects.create(username='P2', name='P2',
-                                               simplified='P2')
-
-        self.r1 = models.Race.objects.create(player=self.p1, map=self.m1,
-                                             time=1)
-        models.Race.objects.create(player=self.p1, map=self.m2, time=2)
-        models.Race.objects.create(player=self.p2, map=self.m1, time=3)
-
-        for t in range(3):
-            models.Checkpoint.objects.create(race=self.r1, number=t, time=t)
-
-    def tearDown(self):
-        self.client.logout()
-        self.client.credentials()
 
     def test_list_filter(self):
         """It should filter by map pk and player pk"""
-        url = '{0}/races/?map={1}'.format(apiroot, self.m1.pk)
-        response = self.client.get(url)
+        response = self.client.get('{0}/races/?map={1}'.format(
+            apiroot, self.maps[0].pk
+        ))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['results']), 2)
+        self.assertEqual(len(response.data['results']), 3)
 
-        url = '{0}/races/?map={1}&player={2}'.format(apiroot, self.m1.pk,
-                                                     self.p1.pk)
-        response = self.client.get(url)
+        response = self.client.get('{0}/races/?map={1}&player={2}'.format(
+            apiroot, self.maps[0].pk, self.players[0].pk
+        ))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
     def test_detail_checkpoint(self):
         """It should attach checkpoints if they exist"""
-        url = '{0}/races/{1}/'.format(apiroot, self.r1.pk)
-        response = self.client.get(url)
+        response = self.client.get('{0}/races/{1}/'.format(
+            apiroot, self.races[0].pk
+        ))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['checkpoints']), 3)
