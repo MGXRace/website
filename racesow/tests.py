@@ -484,6 +484,32 @@ class APIMapTests(RSAPITest, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['name'], 'coldrun')
 
+    def test_detail_record(self):
+        """It should attach the best race if asked"""
+        # Record field does not exist if not requested
+        name = utils.b64encode('coldrun')
+        response = self.client.get('{0}/maps/{1}/'.format(
+            apiroot, name
+        ))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertNotIn('record', response.data)
+
+        # Correct record returned if requested
+        name = utils.b64encode('coldrun')
+        response = self.client.get('{0}/maps/{1}/?record'.format(
+            apiroot, name
+        ))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['record']['time'], 11943)
+
+        # Record is null if not found
+        name = utils.b64encode('0ups_beta2a')
+        response = self.client.get('{0}/maps/{1}/?record'.format(
+            apiroot, name
+        ))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data['record'])
+
 
 class APIPlayerTests(RSAPITest, APITestCase):
     """Test Player API endpoint"""

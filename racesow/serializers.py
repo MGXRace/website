@@ -74,6 +74,7 @@ class MapSerializer(serializers.ModelSerializer):
         slug_field='name',
         queryset=Tag.objects.all(),
     )
+    record = RaceSerializer(read_only=True)
 
     class Meta:
         model = Map
@@ -88,6 +89,7 @@ class MapSerializer(serializers.ModelSerializer):
             'playtime',
             'created',
             'tags',
+            'record',
         )
 
 

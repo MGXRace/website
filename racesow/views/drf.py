@@ -119,6 +119,8 @@ class MapViewSet(B64Lookup, viewsets.ModelViewSet):
       a "-" to reverse the sort.
     - `rand` If supplied, the results will be randomly sorted, this takes
       precedence over `sort`
+    - `record` If supplied on a detail view, the result will have a `record`
+      field with the best race on the map.
     - `pattern={pattern}` Filter the results to maps with names matching a
       regex pattern. `pattern` must be a urlsafe-base64 encoded string.
     - `tags={tags}` Filter the results to maps with every tag in `tags`.
@@ -156,6 +158,25 @@ class MapViewSet(B64Lookup, viewsets.ModelViewSet):
         if 'rand' in self.request.query_params:
             queryset = queryset.order_by('?')
         return queryset
+
+    def retrieve(self, request, *args, **kwargs):
+        """Detail view for map
+
+        This needs to be overridden to add record field.
+        """
+        instance = self.get_object()
+
+        if 'record' in request.query_params:
+            record = instance.race_set \
+                             .filter(time__isnull=False) \
+                             .order_by('time')[:1]
+            if record:
+                instance.record = record[0]
+            else:
+                instance.record = None
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
 
 class TagViewSet(viewsets.ModelViewSet):
