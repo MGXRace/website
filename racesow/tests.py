@@ -588,11 +588,46 @@ class APIRaceTests(RSAPITest, APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['results']), 1)
 
-    def test_detail_checkpoint(self):
+    def test_detail_get(self):
+        """It should get on map/player pk"""
+        response = self.client.get('{0}/races/{1};{2}/'.format(
+            apiroot, self.races[0].map.pk, self.races[0].player.pk
+        ))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_detail_patch_create(self):
+        """It should create a race if necessary"""
+        response = self.client.patch('{0}/races/{1};{2}/'.format(
+            apiroot, self.maps[0].pk, self.players[3].pk
+        ))
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_detail_get_checkpoint(self):
         """It should attach checkpoints if they exist"""
-        response = self.client.get('{0}/races/{1}/'.format(
-            apiroot, self.races[0].pk
+        response = self.client.get('{0}/races/{1};{2}/'.format(
+            apiroot, self.races[0].map.pk, self.races[0].player.pk
         ))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['checkpoints']), 3)
+
+    def test_detail_patch_checkpoint(self):
+        """It should replace checkpoints if asked"""
+        racedata = {
+            'player': self.races[0].player.pk,
+            'map': self.races[0].map.pk,
+            'checkpoints': [
+                {'number': 0, 'time': 0},
+                {'number': 1, 'time': 1},
+            ],
+        }
+        response = self.client.patch('{0}/races/{1};{2}/'.format(
+            apiroot, self.races[0].map.pk, self.races[0].player.pk),
+            racedata,
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['checkpoints']), 2)

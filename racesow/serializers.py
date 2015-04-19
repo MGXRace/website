@@ -1,9 +1,31 @@
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
 from racesow.models import Player, Map, Tag, Race, Checkpoint
 
 
-class PlayerLiteSerializer(serializers.ModelSerializer):
+class LiteSerializer(serializers.ModelSerializer):
+    """A Serializer which reads as an object, but writes as pk"""
+    default_error_messages = {
+        'required': _('This field is required.'),
+        'does_not_exist': _('Invalid pk "{pk_value}" - object does not'
+                            ' exist.'),
+        'incorrect_type': _('Incorrect type. Expected pk value, received'
+                            ' {data_type}.'),
+    }
+
+    def to_internal_value(self, data):
+        ModelClass = self.Meta.model
+
+        try:
+            return ModelClass.objects.get(pk=data)
+        except ModelClass.DoesNotExist:
+            self.fail('does_not_exist', pk_value=data)
+        except (TypeError, ValueError):
+            self.fail('incorrect_type', data_type=type(data).__name__)
+
+
+class PlayerLiteSerializer(LiteSerializer):
     """Minimal serializer for Player model
 
     Intended to nest Players in other serializers.
@@ -23,7 +45,6 @@ class CheckpointSerializer(serializers.ModelSerializer):
         model = Checkpoint
         fields = (
             'id',
-            'race',
             'number',
             'time',
         )
@@ -31,7 +52,7 @@ class CheckpointSerializer(serializers.ModelSerializer):
 
 class RaceSerializer(serializers.ModelSerializer):
     player = PlayerLiteSerializer()
-    checkpoints = CheckpointSerializer(many=True, read_only=True)
+    checkpoints = CheckpointSerializer(many=True, partial=True)
 
     class Meta:
         model = Race
@@ -46,6 +67,27 @@ class RaceSerializer(serializers.ModelSerializer):
             'created',
             'checkpoints',
         )
+
+    def set_checkpoints(self, instance, checkpoint_data):
+        if checkpoint_data is None:
+            return
+
+        instance.checkpoints.all().delete()
+        Checkpoint.objects.bulk_create([
+            Checkpoint(race=instance, **d) for d in checkpoint_data
+        ])
+
+    def create(self, validated_data):
+        checkpoint_data = validated_data.pop('checkpoints', None)
+        instance = super(RaceSerializer, self).create(validated_data)
+        self.set_checkpoints(instance, checkpoint_data)
+        return instance
+
+    def update(self, instance, validated_data):
+        checkpoint_data = validated_data.pop('checkpoints', None)
+        instance = super(RaceSerializer, self).update(instance, validated_data)
+        self.set_checkpoints(instance, checkpoint_data)
+        return instance
 
 
 class PlayerSerializer(serializers.ModelSerializer):

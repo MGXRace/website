@@ -16,7 +16,7 @@ from rest_framework.request import clone_request
 class B64Lookup(object):
     """Mixin class to lookup object on base64 encoded key"""
 
-    def lookup_value(self):
+    def lookup_filter(self):
         """Decode the lookup value from url kwargs"""
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
         assert lookup_url_kwarg in self.kwargs, (
@@ -25,13 +25,13 @@ class B64Lookup(object):
             'attribute on the view correctly.' %
             (self.__class__.__name__, lookup_url_kwarg)
         )
-        return utils.b64param(self.kwargs, lookup_url_kwarg)
+        lookup_value = utils.b64param(self.kwargs, lookup_url_kwarg)
+        return {self.lookup_field: lookup_value}
 
     def get_object(self):
         """Get the map specified for the detail view"""
         queryset = self.filter_queryset(self.get_queryset())
-        flt = {self.lookup_field: self.lookup_value()}
-        obj = get_object_or_404(queryset, **flt)
+        obj = get_object_or_404(queryset, **self.lookup_filter())
         self.check_object_permissions(self.request, obj)
 
         return obj
@@ -39,6 +39,15 @@ class B64Lookup(object):
 
 class UpdateOrCreate(object):
     """Mixin class to update or create an object for PUT|PATCH requests"""
+
+    def update(self, request, *args, **kwargs):
+        """Update the object"""
+        serializer, created = self.update_or_create(request, *args, **kwargs)
+        self.perform_update(serializer)
+
+        if created:
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.data)
 
     def update_or_create(self, request, *args, **kwargs):
         """Return the updated serializer for the request"""
@@ -51,13 +60,13 @@ class UpdateOrCreate(object):
             created = True
 
             try:
-                value = self.lookup_value()
+                value = self.lookup_filter()
             except AttributeError:
                 lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-                value = self.kwargs[lookup_url_kwarg]
+                value = {self.lookup_field: self.kwargs[lookup_url_kwarg]}
 
-            if self.lookup_field not in data:
-                data[self.lookup_field] = value
+            value.update(data)
+            data = value
 
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -242,13 +251,13 @@ class TagViewSet(viewsets.ModelViewSet):
     ordering = ('name',)
 
 
-class RaceViewSet(viewsets.ModelViewSet):
+class RaceViewSet(UpdateOrCreate, viewsets.ModelViewSet):
     """ViewSet for races/ REST endpoint
 
     Routes:
 
     - List view: `races/`
-    - Detail view: `races/{pk}/`
+    - Detail view: `races/{mappk};{playerpk}/`
 
     Arguments:
 
@@ -269,6 +278,14 @@ class RaceViewSet(viewsets.ModelViewSet):
     )
     ordering = ('time',)
 
+    def lookup_filter(self):
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        try:
+            mappk, playerpk = self.kwargs[lookup_url_kwarg].split(';')
+        except ValueError:
+            raise Http404
+        return {'map': mappk, 'player': playerpk}
+
     def get_queryset(self):
         """Get the queryset for the races"""
         queryset = super(RaceViewSet, self).get_queryset()
@@ -284,6 +301,14 @@ class RaceViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(player__pk=ppk)
 
         return queryset
+
+    def get_object(self):
+        """Get the object for races from a player/map composite key"""
+        queryset = self.filter_queryset(self.get_queryset())
+        obj = get_object_or_404(queryset, **self.lookup_filter())
+        self.check_object_permissions(self.request, obj)
+
+        return obj
 
 
 class CheckpointViewSet(viewsets.ModelViewSet):
