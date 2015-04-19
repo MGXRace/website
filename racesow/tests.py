@@ -631,3 +631,93 @@ class APIRaceTests(RSAPITest, APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data['checkpoints']), 2)
+
+    def test_increment_maps_create_unfinished(self):
+        """It should increment a players map count"""
+        racedata = {
+            'player': self.players[3].pk,
+            'map': self.maps[0].pk,
+            'time': None,
+        }
+        response = self.client.patch('{0}/races/{1};{2}/'.format(
+            apiroot, racedata['map'], racedata['player']),
+            racedata,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.patch('{0}/players/{1}/'.format(
+            apiroot, utils.b64encode(self.players[3].username)
+        ))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.players[3].maps + 1, response.data['maps'])
+        self.assertEqual(self.players[3].maps_finished,
+                         response.data['maps_finished'])
+
+    def test_increment_maps_create_finished(self):
+        """It should increment a players map and map finished count"""
+        racedata = {
+            'player': self.players[3].pk,
+            'map': self.maps[0].pk,
+            'time': 1000,
+        }
+        response = self.client.patch('{0}/races/{1};{2}/'.format(
+            apiroot, racedata['map'], racedata['player']),
+            racedata,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.patch('{0}/players/{1}/'.format(
+            apiroot, utils.b64encode(self.players[3].username)
+        ))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.players[0].maps + 1, response.data['maps'])
+        self.assertEqual(self.players[0].maps_finished + 1,
+                         response.data['maps_finished'])
+
+    def test_increment_maps_update_unfinished(self):
+        """It should increment a players map finished count"""
+        racedata = {
+            'player': self.players[0].pk,
+            'map': self.maps[3].pk,
+            'time': 1000,
+        }
+        response = self.client.patch('{0}/races/{1};{2}/'.format(
+            apiroot, racedata['map'], racedata['player']),
+            racedata,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.patch('{0}/players/{1}/'.format(
+            apiroot, utils.b64encode(self.players[0].username)
+        ))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.players[0].maps, response.data['maps'])
+        self.assertEqual(self.players[0].maps_finished + 1,
+                         response.data['maps_finished'])
+
+    def test_increment_maps_update_finished(self):
+        """It should not increment a players map or map finished count"""
+        racedata = {
+            'player': self.players[0].pk,
+            'map': self.maps[0].pk,
+            'time': 1000,
+        }
+        response = self.client.patch('{0}/races/{1};{2}/'.format(
+            apiroot, racedata['map'], racedata['player']),
+            racedata,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        response = self.client.patch('{0}/players/{1}/'.format(
+            apiroot, utils.b64encode(self.players[0].username)
+        ))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.players[0].maps, response.data['maps'])
+        self.assertEqual(self.players[0].maps_finished,
+                         response.data['maps_finished'])

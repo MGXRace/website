@@ -1,3 +1,4 @@
+from django.db.models import F
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
@@ -81,12 +82,26 @@ class RaceSerializer(serializers.ModelSerializer):
         checkpoint_data = validated_data.pop('checkpoints', None)
         instance = super(RaceSerializer, self).create(validated_data)
         self.set_checkpoints(instance, checkpoint_data)
+
+        instance.player.maps = F('maps') + 1
+        if validated_data.get('time', None) is not None:
+            instance.player.maps_finished = F('maps_finished') + 1
+        instance.player.save()
+
         return instance
 
     def update(self, instance, validated_data):
         checkpoint_data = validated_data.pop('checkpoints', None)
+        increment_maps_finished = (validated_data.get('time', None) is not None
+                                   and instance.time is None)
+
         instance = super(RaceSerializer, self).update(instance, validated_data)
         self.set_checkpoints(instance, checkpoint_data)
+
+        if increment_maps_finished:
+            instance.player.maps_finished = F('maps_finished') + 1
+            instance.player.save()
+
         return instance
 
 
