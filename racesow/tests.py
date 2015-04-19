@@ -45,7 +45,10 @@ class RSAPITest(object):
         self.tags = [models.Tag.objects.create(**d) for d in tags]
 
         maps = [
-            {'name': 'coldrun'},
+            {
+                'name': 'coldrun',
+                'oneliner': 'Woop Woop',
+            },
             {'name': '0ups_beta2a'},
             {'name': 'gpl-arcaon'},
             {'name': 'pornstar-slopin'},
@@ -721,3 +724,37 @@ class APIRaceTests(RSAPITest, APITestCase):
         self.assertEqual(self.players[0].maps, response.data['maps'])
         self.assertEqual(self.players[0].maps_finished,
                          response.data['maps_finished'])
+
+    def test_update_not_best(self):
+        """It should trigger a point computation"""
+        racedata = {
+            'player': self.players[3].pk,
+            'map': self.maps[0].pk,
+            'time': 100000,
+        }
+        response = self.client.patch('{0}/races/{1};{2}/'.format(
+            apiroot, racedata['map'], racedata['player']),
+            racedata,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        map_ = models.Map.objects.get(pk=racedata['map'])
+        self.assertEqual(map_.compute_points, True)
+
+    def test_update_best(self):
+        """It should clear the oneliner and trigger a point computation"""
+        racedata = {
+            'player': self.players[3].pk,
+            'map': self.maps[0].pk,
+            'time': 100,
+        }
+        response = self.client.patch('{0}/races/{1};{2}/'.format(
+            apiroot, racedata['map'], racedata['player']),
+            racedata,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        map_ = models.Map.objects.get(pk=racedata['map'])
+        self.assertEqual(map_.compute_points, True)

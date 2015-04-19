@@ -78,10 +78,21 @@ class RaceSerializer(serializers.ModelSerializer):
             Checkpoint(race=instance, **d) for d in checkpoint_data
         ])
 
+    def update_map(self, instance):
+        record = Race.objects.filter(map=instance.map, time__isnull=False) \
+                             .order_by('time')[:1]
+
+        if instance.time is not None:
+            instance.map.compute_points = True
+        if record and record[0].pk == instance.pk:
+            instance.map.oneliner = ''
+        instance.map.save()
+
     def create(self, validated_data):
         checkpoint_data = validated_data.pop('checkpoints', None)
         instance = super(RaceSerializer, self).create(validated_data)
         self.set_checkpoints(instance, checkpoint_data)
+        self.update_map(instance)
 
         instance.player.maps = F('maps') + 1
         if validated_data.get('time', None) is not None:
@@ -97,6 +108,7 @@ class RaceSerializer(serializers.ModelSerializer):
 
         instance = super(RaceSerializer, self).update(instance, validated_data)
         self.set_checkpoints(instance, checkpoint_data)
+        self.update_map(instance)
 
         if increment_maps_finished:
             instance.player.maps_finished = F('maps_finished') + 1
