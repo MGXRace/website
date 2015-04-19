@@ -524,11 +524,20 @@ class APIPlayerTests(RSAPITest, APITestCase):
         self.assertEqual(len(response.data['results']), 1)
         self.assertEqual(response.data['results'][0]['simplified'], 'o_O ale')
 
+    def test_detail_create(self):
+        """It should create the player if doesn't exist"""
+        response = self.client.put('{0}/players/{1}/'.format(
+            apiroot, utils.b64encode('new'),
+        ))
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data['username'], 'new')
+
     def test_detail_record(self):
         """It should attach a record if asked"""
         # No record field if mid not supplied
         response = self.client.get('{0}/players/{1}/'.format(
-            apiroot, utils.b64encode('ale'), self.maps[0].pk
+            apiroot, utils.b64encode('ale'),
         ))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -552,6 +561,14 @@ class APIPlayerTests(RSAPITest, APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(data['record'], None)
+
+        # It should attach the record to PUT and PATCH requests
+        response = self.client.patch('{0}/players/{1}/?mid={2}'.format(
+            apiroot, utils.b64encode('ale'), self.maps[0].pk
+        ))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('record', response.data)
 
 
 class APIRaceTests(RSAPITest, APITestCase):

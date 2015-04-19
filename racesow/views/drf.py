@@ -1,9 +1,11 @@
 import racesow.models as mod
 import racesow.serializers as ser
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from racesow import utils
-from rest_framework import viewsets
+from rest_framework import status, viewsets
 from rest_framework.response import Response
+from rest_framework.request import clone_request
 
 
 ##########
@@ -14,10 +16,8 @@ from rest_framework.response import Response
 class B64Lookup(object):
     """Mixin class to lookup object on base64 encoded key"""
 
-    def get_object(self):
-        """Get the map specified for the detail view"""
-        queryset = self.filter_queryset(self.get_queryset())
-
+    def lookup_value(self):
+        """Decode the lookup value from url kwargs"""
         lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
         assert lookup_url_kwarg in self.kwargs, (
             'Expected view %s to be called with a URL keyword argument '
@@ -25,13 +25,54 @@ class B64Lookup(object):
             'attribute on the view correctly.' %
             (self.__class__.__name__, lookup_url_kwarg)
         )
+        return utils.b64param(self.kwargs, lookup_url_kwarg)
 
-        lookup_value = utils.b64param(self.kwargs, lookup_url_kwarg)
-        flt = {self.lookup_field: lookup_value}
+    def get_object(self):
+        """Get the map specified for the detail view"""
+        queryset = self.filter_queryset(self.get_queryset())
+        flt = {self.lookup_field: self.lookup_value()}
         obj = get_object_or_404(queryset, **flt)
         self.check_object_permissions(self.request, obj)
 
         return obj
+
+
+class UpdateOrCreate(object):
+    """Mixin class to update or create an object for PUT|PATCH requests"""
+
+    def update_or_create(self, request, *args, **kwargs):
+        """Return the updated serializer for the request"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object_or_none()
+        data = request.data.copy()
+        created = False
+
+        if instance is None:
+            created = True
+
+            try:
+                value = self.lookup_value()
+            except AttributeError:
+                lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+                value = self.kwargs[lookup_url_kwarg]
+
+            if self.lookup_field not in data:
+                data[self.lookup_field] = value
+
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+
+        return serializer, created
+
+    def get_object_or_none(self):
+        """Return the object for the request or none"""
+        try:
+            return self.get_object()
+        except Http404:
+            if self.request.method in ('PUT', 'PATCH'):
+                self.check_permissions(clone_request(self.request, 'POST'))
+            else:
+                raise
 
 
 ##########
@@ -39,7 +80,7 @@ class B64Lookup(object):
 ##########
 
 
-class PlayerViewSet(B64Lookup, viewsets.ModelViewSet):
+class PlayerViewSet(B64Lookup, UpdateOrCreate, viewsets.ModelViewSet):
     """ViewSet for players/ REST endpoint
 
     Routes:
@@ -80,25 +121,39 @@ class PlayerViewSet(B64Lookup, viewsets.ModelViewSet):
 
         return queryset
 
+    def set_record(self, data, request, player):
+        """Get the player's race for a given map"""
+        if 'mid' not in request.query_params:
+            return
+
+        mappk = request.query_params['mid']
+        try:
+            record = player.race_set.get(map=mappk)
+        except mod.Race.DoesNotExist:
+            data['record'] = None
+            return
+        data['record'] = ser.RaceSerializer(record).data
+
     def retrieve(self, request, *args, **kwargs):
         """Detail view for player
 
         This needs to be overridden to add record field.
         """
         instance = self.get_object()
+        data = self.get_serializer(instance).data
+        self.set_record(data, request, instance)
+        return Response(data)
 
-        if 'mid' in request.query_params:
-            flt = {
-                'time__isnull': False,
-                'map__id': request.query_params['mid']
-            }
-            try:
-                instance.record = instance.race_set.get(**flt)
-            except mod.Race.DoesNotExist:
-                instance.record = None
+    def update(self, request, *args, **kwargs):
+        """Update the player"""
+        serializer, created = self.update_or_create(request, *args, **kwargs)
+        instance = serializer.save()
+        data = serializer.data
+        self.set_record(data, request, instance)
 
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        if created:
+            return Response(data, status=status.HTTP_201_CREATED)
+        return Response(data)
 
 
 class MapViewSet(B64Lookup, viewsets.ModelViewSet):

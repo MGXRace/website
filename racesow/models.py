@@ -161,8 +161,8 @@ class Player(models.Model):
     """
     username = models.CharField(max_length=64, unique=True)
     admin = models.BooleanField(default=False)
-    name = models.CharField(max_length=64)
-    simplified = models.CharField(max_length=64, unique=True)
+    name = models.CharField(max_length=64, **_null)
+    simplified = models.CharField(max_length=64, unique=True, **_null)
     playtime = models.BigIntegerField(default=0)
     races = models.IntegerField(default=0)
     maps = models.IntegerField(default=0)

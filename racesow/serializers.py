@@ -49,8 +49,6 @@ class RaceSerializer(serializers.ModelSerializer):
 
 
 class PlayerSerializer(serializers.ModelSerializer):
-    record = RaceSerializer(read_only=True)
-
     class Meta:
         model = Player
         fields = (
@@ -64,7 +62,6 @@ class PlayerSerializer(serializers.ModelSerializer):
             'maps',
             'maps_finished',
             'points',
-            'record',
         )
 
 
