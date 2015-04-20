@@ -1,5 +1,5 @@
 from django.conf.urls import patterns
-from . import views
+from racesowold import views
 
 urlpatterns = patterns(
     '',

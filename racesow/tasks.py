@@ -1,11 +1,9 @@
-from __future__ import absolute_import
-
 import datetime
 
 from celery import shared_task
 from celery.utils.log import get_task_logger
 
-from .models import Map, Player, Race
+from racesow.models import Map, Player, Race
 from racesow import services
 
 

@@ -1,8 +1,8 @@
 from django.contrib import admin
-from .models import Gameserver, Map, Player, PlayerMap, Checkpoint
+from racesowold import models
 
-admin.site.register(Gameserver)
-admin.site.register(Map)
-admin.site.register(Player)
-admin.site.register(PlayerMap)
-admin.site.register(Checkpoint)
+admin.site.register(models.Gameserver)
+admin.site.register(models.Map)
+admin.site.register(models.Player)
+admin.site.register(models.PlayerMap)
+admin.site.register(models.Checkpoint)

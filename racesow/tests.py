@@ -8,10 +8,6 @@ import unittest
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from .models import (
-    Map,
-    Player,
-    Race)
 from racesow import models
 from racesow import utils
 from rest_framework import status
@@ -172,36 +168,36 @@ class MapMethodTests(TestCase):
 
     def test_get_existing_map(self):
         insert_name = "MyTestMap"
-        map_ = Map()
+        map_ = models.Map()
         map_.name = insert_name
         map_.save()
 
-        Map.objects.get(name=insert_name)
+        models.Map.objects.get(name=insert_name)
 
     def test_get_nonexisting_map(self):
         insert_name = "MyTestMap"
         select_name = "NotMyTestMap"
-        map_ = Map()
+        map_ = models.Map()
         map_.name = insert_name
         map_.save()
 
-        with self.assertRaises(Map.DoesNotExist):
-            Map.objects.get(name=select_name)
+        with self.assertRaises(models.Map.DoesNotExist):
+            models.Map.objects.get(name=select_name)
 
     def test_increment_map_playtime(self):
         insert_name = "MyTestMap"
         insert_playtime = 100
         add_playtime = 5
-        map_ = Map()
+        map_ = models.Map()
         map_.name = insert_name
         map_.playtime = insert_playtime
         map_.save()
 
-        map2 = Map.objects.get(name=insert_name)
+        map2 = models.Map.objects.get(name=insert_name)
         map2.playtime += add_playtime
         map2.save()
 
-        map3 = Map.objects.get(name=insert_name)
+        map3 = models.Map.objects.get(name=insert_name)
         self.assertEqual(map3.playtime, insert_playtime + add_playtime)
 
 
@@ -294,24 +290,24 @@ class RaceTests(TestCase):
         pass
 
     def test_insert_with_without_time(self):
-        m = Map.objects.create(name='bla')
-        p1 = Player.objects.create(username='asda', simplified='asda')
-        p2 = Player.objects.create(username='asdb', simplified='asdb')
-        p3 = Player.objects.create(username='asdc', simplified='asdc')
-        p4 = Player.objects.create(username='asdd', simplified='asdd')
-        race1 = Race.objects.create(player_id=p1.id, map_id=m.id)
-        race2 = Race.objects.create(player_id=p2.id, map_id=m.id)
-        Race.objects.create(player_id=p3.id, map_id=m.id)
-        Race.objects.create(player_id=p4.id, map_id=m.id)
+        m = models.Map.objects.create(name='bla')
+        p1 = models.Player.objects.create(username='asda', simplified='asda')
+        p2 = models.Player.objects.create(username='asdb', simplified='asdb')
+        p3 = models.Player.objects.create(username='asdc', simplified='asdc')
+        p4 = models.Player.objects.create(username='asdd', simplified='asdd')
+        race1 = models.Race.objects.create(player_id=p1.id, map_id=m.id)
+        race2 = models.Race.objects.create(player_id=p2.id, map_id=m.id)
+        models.Race.objects.create(player_id=p3.id, map_id=m.id)
+        models.Race.objects.create(player_id=p4.id, map_id=m.id)
         race1.time = 12345
         race2.time = 54321
         race1.save()
         race2.save()
 
-        races = Race.objects.filter(time__isnull=False)
+        races = models.Race.objects.filter(time__isnull=False)
         self.assertEqual(len(races), 2)
 
-        races = Race.objects.filter(map_id=m.id)
+        races = models.Race.objects.filter(map_id=m.id)
         completed_races = [race for race in races if race.time is not None]
         self.assertEqual(len(completed_races), 2)
 

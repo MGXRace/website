@@ -4,12 +4,7 @@ import json
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse
 from django.views.generic import View
-from .models import (
-    Map,
-    PlayerMap)
-from .serializers import (
-    playerSerializer,
-    raceSerializer)
+from racesowold import models, serializers
 
 
 def _b64decode(msg):
@@ -43,7 +38,7 @@ class APIRace(View):
                                 status=400)
 
         try:
-            map_ = Map.objects.get(name=mapname)
+            map_ = models.Map.objects.get(name=mapname)
         except:
             data = json.dumps(
                 {'error': 'Could not find map \'{}\''.format(mapname)})
@@ -56,7 +51,7 @@ class APIRace(View):
             'player__isnull': False,
             'prejumped': 'false',
         }
-        races = PlayerMap.objects.filter(**flt).order_by('time')[:limit]
+        races = models.PlayerMap.objects.filter(**flt).order_by('time')[:limit]
         data = {
             "map": mapname,
             "oneliner": map_.oneliner,
@@ -65,8 +60,8 @@ class APIRace(View):
         }
 
         for race in races:
-            srace = raceSerializer(race)
-            srace['player'] = playerSerializer(race.player)
+            srace = serializers.raceSerializer(race)
+            srace['player'] = serializers.playerSerializer(race.player)
             data['races'].append(srace)
 
         return HttpResponse(json.dumps(data), content_type='application/json')

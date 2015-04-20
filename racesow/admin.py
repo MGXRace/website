@@ -1,9 +1,8 @@
 from django.contrib import admin
-from .models import Tag, Server, Map, MapRating, PlayerHistory
-from .models import Player, RaceHistory, Race, Checkpoint
+from racesow import models
 
-admin.site.register(Tag)
-admin.site.register(Server)
+admin.site.register(models.Tag)
+admin.site.register(models.Server)
 
 
 class MapAdmin(admin.ModelAdmin):
@@ -24,10 +23,10 @@ class MapAdmin(admin.ModelAdmin):
             'all': ('admin/css/admin_extra.css',)
         }
 
-admin.site.register(Map, MapAdmin)
-admin.site.register(MapRating)
-admin.site.register(PlayerHistory)
-admin.site.register(Player)
-admin.site.register(RaceHistory)
-admin.site.register(Race)
-admin.site.register(Checkpoint)
+admin.site.register(models.Map, MapAdmin)
+admin.site.register(models.MapRating)
+admin.site.register(models.PlayerHistory)
+admin.site.register(models.Player)
+admin.site.register(models.RaceHistory)
+admin.site.register(models.Race)
+admin.site.register(models.Checkpoint)

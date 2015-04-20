@@ -1,7 +1,7 @@
 from django.utils import timezone
 import pytz
-from .models import Server
-from .utils import authenticate
+from racesow.models import Server
+from racesow.utils import authenticate
 from django.core.exceptions import PermissionDenied
 
 
