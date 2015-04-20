@@ -14,6 +14,7 @@ router.register(r'maps', drf.MapViewSet)
 router.register(r'tags', drf.TagViewSet)
 router.register(r'races', drf.RaceViewSet)
 router.register(r'checkpoints', drf.CheckpointViewSet)
+router.register(r'races-1.0', drf.Race10ViewSet)
 
 urlpatterns = patterns(
     '',

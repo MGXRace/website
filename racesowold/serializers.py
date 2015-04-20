@@ -1,4 +1,52 @@
 from django.utils import timezone
+from racesowold import models
+from rest_framework import serializers
+
+
+class PlayerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Player
+        fields = (
+            'id',
+            'name',
+            'simplified',
+            'playtime',
+            'races',
+            'maps',
+            'points',
+        )
+
+
+class MapSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = models.Map
+        fields = (
+            'id',
+            'name',
+            'status',
+            'races',
+            'oneliner',
+            'playtime',
+            'created',
+        )
+
+
+class RaceSerializer(serializers.ModelSerializer):
+    map = MapSerializer(read_only=True)
+    player = PlayerSerializer(read_only=True)
+
+    class Meta:
+        models = models.PlayerMap
+        fields = (
+            'id',
+            'player',
+            'map',
+            'server',
+            'time',
+            'points',
+            'playtime',
+            'created',
+        )
 
 
 def playerSerializer(player):

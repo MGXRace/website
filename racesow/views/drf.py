@@ -1,5 +1,7 @@
-import racesow.models as mod
-import racesow.serializers as ser
+import racesow.models as models
+import racesow.serializers as serializers
+import racesowold.models as models_10
+import racesowold.serializers as serializers_10
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from racesow import utils
@@ -84,6 +86,42 @@ class UpdateOrCreate(object):
                 raise
 
 
+class RaceMixin(object):
+    """Mixin class for race views"""
+
+    def lookup_filter(self):
+        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
+        try:
+            mappk, playerpk = self.kwargs[lookup_url_kwarg].split(';')
+        except ValueError:
+            raise Http404
+        return {'map': mappk, 'player': playerpk}
+
+    def get_queryset(self):
+        """Get the queryset for the races"""
+        queryset = super(RaceMixin, self).get_queryset()
+
+        mpk = self.request.query_params.get('map', None)
+        if mpk:
+            mpk = utils.clean_pk(models.Map, mpk, 'Invalid map key: {0}')
+            queryset = queryset.filter(map__pk=mpk)
+
+        ppk = self.request.query_params.get('player', None)
+        if ppk:
+            ppk = utils.clean_pk(models.Player, ppk, 'Invalid player key: {0}')
+            queryset = queryset.filter(player__pk=ppk)
+
+        return queryset
+
+    def get_object(self):
+        """Get the object for races from a player/map composite key"""
+        queryset = self.filter_queryset(self.get_queryset())
+        obj = get_object_or_404(queryset, **self.lookup_filter())
+        self.check_object_permissions(self.request, obj)
+
+        return obj
+
+
 ##########
 # Views
 ##########
@@ -112,8 +150,8 @@ class PlayerViewSet(B64Lookup, UpdateOrCreate, viewsets.ModelViewSet):
       matches. `simplified` must be a urlsafe-base64 encoded string.
     """
     lookup_field = 'username'
-    queryset = mod.Player.objects.all()
-    serializer_class = ser.PlayerSerializer
+    queryset = models.Player.objects.all()
+    serializer_class = serializers.PlayerSerializer
     ordering_fields = (
         'username', 'admin', 'simplified', 'playtime', 'races', 'maps',
         'maps_finished', 'points',
@@ -138,10 +176,10 @@ class PlayerViewSet(B64Lookup, UpdateOrCreate, viewsets.ModelViewSet):
         mappk = request.query_params['mid']
         try:
             record = player.race_set.get(map=mappk)
-        except mod.Race.DoesNotExist:
+        except models.Race.DoesNotExist:
             data['record'] = None
             return
-        data['record'] = ser.RaceSerializer(record).data
+        data['record'] = serializers.RaceSerializer(record).data
 
     def retrieve(self, request, *args, **kwargs):
         """Detail view for player
@@ -192,14 +230,14 @@ class MapViewSet(B64Lookup, viewsets.ModelViewSet):
       `["pg", "rl"]`
     """
     lookup_field = 'name'
-    queryset = mod.Map.objects.all()
-    serializer_class = ser.MapSerializer
+    queryset = models.Map.objects.all()
+    serializer_class = serializers.MapSerializer
     ordering_fields = ('name', 'races', 'playtime', 'created', 'oneliner')
     ordering = ('name',)
 
     def get_queryset(self):
         """Generate the queryset of map objects for the given params"""
-        queryset = mod.Map.objects.filter(enabled=True)
+        queryset = models.Map.objects.filter(enabled=True)
 
         if self.request.query_params.get('pattern', None):
             pattern = utils.b64param(self.request.query_params, 'pattern')
@@ -245,13 +283,13 @@ class MapViewSet(B64Lookup, viewsets.ModelViewSet):
 
 class TagViewSet(viewsets.ModelViewSet):
     lookup_field = 'name'
-    queryset = mod.Tag.objects.all()
-    serializer_class = ser.TagSerializer
+    queryset = models.Tag.objects.all()
+    serializer_class = serializers.TagSerializer
     ordering_fields = ('name',)
     ordering = ('name',)
 
 
-class RaceViewSet(UpdateOrCreate, viewsets.ModelViewSet):
+class RaceViewSet(RaceMixin, UpdateOrCreate, viewsets.ModelViewSet):
     """ViewSet for races/ REST endpoint
 
     Routes:
@@ -261,7 +299,8 @@ class RaceViewSet(UpdateOrCreate, viewsets.ModelViewSet):
 
     Arguments:
 
-    - `pk` id number of the race
+    - `mappk` id of the map
+    - `playerpk` id of the player
 
     Supported query parameters:
 
@@ -270,47 +309,49 @@ class RaceViewSet(UpdateOrCreate, viewsets.ModelViewSet):
     - `map={pk}` Filter results to races on a specific map
     - `player={pk}` Filter results to races by a specific player
     """
-    queryset = mod.Race.objects.all()
-    serializer_class = ser.RaceSerializer
+    queryset = models.Race.objects.all()
+    serializer_class = serializers.RaceSerializer
     ordering_fields = (
         'player__simplified', 'map__name', 'server__name', 'time', 'playtime',
         'points', 'rank', 'created', 'last_played',
     )
     ordering = ('time',)
 
-    def lookup_filter(self):
-        lookup_url_kwarg = self.lookup_url_kwarg or self.lookup_field
-        try:
-            mappk, playerpk = self.kwargs[lookup_url_kwarg].split(';')
-        except ValueError:
-            raise Http404
-        return {'map': mappk, 'player': playerpk}
-
-    def get_queryset(self):
-        """Get the queryset for the races"""
-        queryset = super(RaceViewSet, self).get_queryset()
-
-        mpk = self.request.query_params.get('map', None)
-        if mpk:
-            mpk = utils.clean_pk(mod.Map, mpk, 'Invalid map key: {0}')
-            queryset = queryset.filter(map__pk=mpk)
-
-        ppk = self.request.query_params.get('player', None)
-        if ppk:
-            ppk = utils.clean_pk(mod.Player, ppk, 'Invalid player key: {0}')
-            queryset = queryset.filter(player__pk=ppk)
-
-        return queryset
-
-    def get_object(self):
-        """Get the object for races from a player/map composite key"""
-        queryset = self.filter_queryset(self.get_queryset())
-        obj = get_object_or_404(queryset, **self.lookup_filter())
-        self.check_object_permissions(self.request, obj)
-
-        return obj
-
 
 class CheckpointViewSet(viewsets.ModelViewSet):
-    queryset = mod.Checkpoint.objects.all()
-    serializer_class = ser.CheckpointSerializer
+    queryset = models.Checkpoint.objects.all()
+    serializer_class = serializers.CheckpointSerializer
+
+
+class Race10ViewSet(RaceMixin, viewsets.ReadOnlyModelViewSet):
+    """ViewSet for races-10/ REST endpoint
+
+    Routes:
+
+    - List view: `races-10/`
+    - Detail view: `races-10/{mappk};{playerpk}/`
+
+    Arguments:
+
+    - `mappk` id of the map
+    - `playerpk` id of the player
+
+    Supported query parameters:
+
+    - `sort={field}` Sort the results by the given field, prefix field with
+      a "-" to reverse the sort.
+    - `map={pk}` Filter results to races on a specific map
+    - `player={pk}` Filter results to races by a specific player
+    """
+    queryset = models_10.PlayerMap.objects.filter(
+        map__isnull=False,
+        player__isnull=False,
+        time__isnull=False,
+        prejumped='false'
+    )
+    serializer_class = serializers_10.RaceSerializer
+    ordering_fields = (
+        'player__simplified', 'map__name', 'server__servername', 'time',
+        'playtime', 'points', 'created',
+    )
+    ordering = ('time',)
