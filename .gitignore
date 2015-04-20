@@ -1,7 +1,10 @@
 *.py[cod]
 
-# Test database
+# Testing files
 db.sqlite3
+static/
+media/
+logs/
 
 # C extensions
 *.so
