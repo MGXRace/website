@@ -615,15 +615,15 @@ class APIRaceTests(RSAPITest, APITestCase):
     def test_detail_patch_checkpoint(self):
         """It should replace checkpoints if asked"""
         racedata = {
-            'player': self.races[0].player.pk,
-            'map': self.races[0].map.pk,
             'checkpoints': [
                 {'number': 0, 'time': 0},
                 {'number': 1, 'time': 1},
             ],
         }
-        response = self.client.patch('{0}/races/{1};{2}/'.format(
-            apiroot, self.races[0].map.pk, self.races[0].player.pk),
+        response = self.client.patch(
+            '{0}/races/{1};{2}/'.format(
+                apiroot, self.races[0].map.pk, self.races[0].player.pk,
+            ),
             racedata,
             format='json'
         )
@@ -634,12 +634,12 @@ class APIRaceTests(RSAPITest, APITestCase):
     def test_increment_maps_create_unfinished(self):
         """It should increment a players map count"""
         racedata = {
-            'player': self.players[3].pk,
-            'map': self.maps[0].pk,
             'time': None,
         }
-        response = self.client.patch('{0}/races/{1};{2}/'.format(
-            apiroot, racedata['map'], racedata['player']),
+        response = self.client.patch(
+            '{0}/races/{1};{2}/'.format(
+                apiroot, self.maps[0].pk, self.players[3].pk,
+            ),
             racedata,
             format='json'
         )
@@ -656,12 +656,12 @@ class APIRaceTests(RSAPITest, APITestCase):
     def test_increment_maps_create_finished(self):
         """It should increment a players map and map finished count"""
         racedata = {
-            'player': self.players[3].pk,
-            'map': self.maps[0].pk,
             'time': 1000,
         }
-        response = self.client.patch('{0}/races/{1};{2}/'.format(
-            apiroot, racedata['map'], racedata['player']),
+        response = self.client.patch(
+            '{0}/races/{1};{2}/'.format(
+                apiroot, self.maps[0].pk, self.players[3].pk,
+            ),
             racedata,
             format='json'
         )
@@ -679,12 +679,12 @@ class APIRaceTests(RSAPITest, APITestCase):
     def test_increment_maps_update_unfinished(self):
         """It should increment a players map finished count"""
         racedata = {
-            'player': self.players[0].pk,
-            'map': self.maps[3].pk,
             'time': 1000,
         }
-        response = self.client.patch('{0}/races/{1};{2}/'.format(
-            apiroot, racedata['map'], racedata['player']),
+        response = self.client.patch(
+            '{0}/races/{1};{2}/'.format(
+                apiroot, self.maps[3].pk, self.players[0].pk,
+            ),
             racedata,
             format='json'
         )
@@ -701,12 +701,12 @@ class APIRaceTests(RSAPITest, APITestCase):
     def test_increment_maps_update_finished(self):
         """It should not increment a players map or map finished count"""
         racedata = {
-            'player': self.players[0].pk,
-            'map': self.maps[0].pk,
             'time': 1000,
         }
-        response = self.client.patch('{0}/races/{1};{2}/'.format(
-            apiroot, racedata['map'], racedata['player']),
+        response = self.client.patch(
+            '{0}/races/{1};{2}/'.format(
+                apiroot, self.maps[0].pk, self.players[0].pk,
+            ),
             racedata,
             format='json'
         )
@@ -724,33 +724,33 @@ class APIRaceTests(RSAPITest, APITestCase):
     def test_update_not_best(self):
         """It should trigger a point computation"""
         racedata = {
-            'player': self.players[3].pk,
-            'map': self.maps[0].pk,
             'time': 100000,
         }
-        response = self.client.patch('{0}/races/{1};{2}/'.format(
-            apiroot, racedata['map'], racedata['player']),
+        response = self.client.patch(
+            '{0}/races/{1};{2}/'.format(
+                apiroot, self.maps[0].pk, self.players[3].pk,
+            ),
             racedata,
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        map_ = models.Map.objects.get(pk=racedata['map'])
+        map_ = models.Map.objects.get(pk=self.maps[0].pk)
         self.assertEqual(map_.compute_points, True)
 
     def test_update_best(self):
         """It should clear the oneliner and trigger a point computation"""
         racedata = {
-            'player': self.players[3].pk,
-            'map': self.maps[0].pk,
             'time': 100,
         }
-        response = self.client.patch('{0}/races/{1};{2}/'.format(
-            apiroot, racedata['map'], racedata['player']),
+        response = self.client.patch(
+            '{0}/races/{1};{2}/'.format(
+                apiroot, self.maps[0].pk, self.players[3].pk,
+            ),
             racedata,
             format='json'
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        map_ = models.Map.objects.get(pk=racedata['map'])
+        map_ = models.Map.objects.get(pk=self.maps[0].pk)
         self.assertEqual(map_.compute_points, True)

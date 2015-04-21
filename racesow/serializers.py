@@ -1,7 +1,7 @@
-from django.db.models import F
+from django.http import QueryDict
 from django.utils import timezone
 from django.utils.translation import ugettext_lazy as _
-from rest_framework import serializers
+from rest_framework import serializers, fields
 from racesow.models import Player, Map, Tag, Race, Checkpoint
 
 
@@ -69,6 +69,13 @@ class RaceSerializer(serializers.ModelSerializer):
             'checkpoints',
         )
 
+    def __init__(self, instance=None, data=fields.empty, **kwargs):
+        # Workaround for http://stackoverflow.com/questions/29759838/
+        if isinstance(data, QueryDict):
+            data = dict(data.items())
+
+        super(RaceSerializer, self).__init__(instance, data, **kwargs)
+
     def set_checkpoints(self, instance, checkpoint_data):
         if checkpoint_data is None:
             return
@@ -94,9 +101,9 @@ class RaceSerializer(serializers.ModelSerializer):
         self.set_checkpoints(instance, checkpoint_data)
         self.update_map(instance)
 
-        instance.player.maps = F('maps') + 1
+        instance.player.maps += 1
         if validated_data.get('time', None) is not None:
-            instance.player.maps_finished = F('maps_finished') + 1
+            instance.player.maps_finished += 1
         instance.player.save()
 
         return instance
@@ -111,7 +118,7 @@ class RaceSerializer(serializers.ModelSerializer):
         self.update_map(instance)
 
         if increment_maps_finished:
-            instance.player.maps_finished = F('maps_finished') + 1
+            instance.player.maps_finished += 1
             instance.player.save()
 
         return instance
