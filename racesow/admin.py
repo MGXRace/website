@@ -1,5 +1,6 @@
 from django.contrib import admin
 from racesow import models
+from simple_history.admin import SimpleHistoryAdmin
 
 admin.site.register(models.Tag)
 admin.site.register(models.Server)
@@ -26,7 +27,7 @@ class MapAdmin(admin.ModelAdmin):
 admin.site.register(models.Map, MapAdmin)
 admin.site.register(models.MapRating)
 admin.site.register(models.PlayerHistory)
-admin.site.register(models.Player)
+admin.site.register(models.Player, SimpleHistoryAdmin)
 admin.site.register(models.RaceHistory)
-admin.site.register(models.Race)
+admin.site.register(models.Race, SimpleHistoryAdmin)
 admin.site.register(models.Checkpoint)

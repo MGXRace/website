@@ -86,6 +86,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'simple_history',
     'rest_framework',
     'rest_framework.authtoken',
     'racesowold',
@@ -103,6 +104,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'simple_history.middleware.HistoryRequestMiddleware',
     'racesow.middleware.ServerAuthenticationMiddleware',
     'racesow.middleware.TimezoneMiddleware',
 )

@@ -6,6 +6,7 @@ from django.utils import timezone
 
 from racesow.utils import username_with_html_colors, millis_to_str
 from rest_framework.authtoken.models import Token
+from simple_history.models import HistoricalRecords
 
 
 User = getattr(settings, 'AUTH_USER_MODEL', 'auth.User')
@@ -168,6 +169,7 @@ class Player(models.Model):
     maps = models.IntegerField(default=0)
     maps_finished = models.IntegerField(default=0)  # actually finished maps
     points = models.IntegerField(default=0)         # total number of points
+    history = HistoricalRecords()
 
     def __unicode__(self):
         return '<Player user:{}, nick:{}>'.format(self.username,
@@ -255,6 +257,7 @@ class Race(models.Model):
     rank = models.IntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
     last_played = models.DateTimeField(default=timezone.now)
+    history = HistoricalRecords()
 
     class Meta:
         unique_together = ('player', 'map')
