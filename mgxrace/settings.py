@@ -7,6 +7,7 @@ import djcelery
 djcelery.setup_loader()
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+DEBUG = not os.environ.get('MGXRACE_PRODUCTION', False)
 
 
 ##########
@@ -51,12 +52,22 @@ REST_FRAMEWORK = {
 
 
 ##########
+# Cors Headers
+##########
+
+
+CORS_ALLOW_CREDENTIALS = False
+
+if DEBUG:
+    CORS_ORIGIN_ALLOW_ALL = True
+
+
+##########
 # Django
 ##########
 
 
 SECRET_KEY = os.environ.get('MGXRACE_SECRET', 'insecuresecret')
-DEBUG = os.environ.get('MGXRACE_PRODUCTION', True)
 TEMPLATE_DEBUG = DEBUG
 ALLOWED_HOSTS = os.environ.get('MGXRACE_HOSTS', '').split()
 INTERNAL_IPS = ['127.0.0.1']
@@ -86,6 +97,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'corsheaders',
     'simple_history',
     'rest_framework',
     'rest_framework.authtoken',
@@ -96,6 +108,7 @@ INSTALLED_APPS = (
 
 
 MIDDLEWARE_CLASSES = (
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',

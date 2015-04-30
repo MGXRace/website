@@ -1,5 +1,6 @@
 celery==3.1.16
 django-celery==3.1.16
+django-cors-headers==1.0.0
 django-simple-history==1.6.0
 djangorestframework==3.1.1
 Django==1.8
