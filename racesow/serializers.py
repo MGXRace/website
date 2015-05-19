@@ -5,6 +5,44 @@ from rest_framework import serializers, fields
 from racesow.models import Player, Map, Tag, Race, Checkpoint
 
 
+class AddFieldSerializer(object):
+    """Mixin class to support increment fields
+
+    Fields named `basefield_add` will have their value added to `basefield`
+    before saving. Fields for addition must be declared in `Meta.add_fields`.
+    """
+
+    def _process_add_fields(self, validated_data, instance=None):
+        """Calculate new field values from an instance and the field_add values
+
+        This modifies validated_data in place.
+        """
+        for field in self.Meta.add_fields:
+            add_field = field + '_add'
+            if add_field not in validated_data:
+                continue
+
+            add_value = validated_data.pop(add_field)
+
+            base_value = 0
+            if field in validated_data:
+                base_value = validated_data[field]
+            else:
+                base_value = getattr(instance, field, 0)
+
+            validated_data[field] = base_value + add_value
+
+        return validated_data
+
+    def create(self, validated_data):
+        validated_data = self._process_add_fields(validated_data)
+        return super(AddFieldSerializer, self).create(validated_data)
+
+    def update(self, instance, validated_data):
+        validated_data = self._process_add_fields(validated_data, instance)
+        return super(AddFieldSerializer, self).update(instance, validated_data)
+
+
 class LiteSerializer(serializers.ModelSerializer):
     """A Serializer which reads as an object, but writes as pk"""
     default_error_messages = {
@@ -51,7 +89,9 @@ class CheckpointSerializer(serializers.ModelSerializer):
         )
 
 
-class RaceSerializer(serializers.ModelSerializer):
+class RaceSerializer(AddFieldSerializer, serializers.ModelSerializer):
+    playtime_add = serializers.IntegerField(write_only=True, required=False)
+    races_add = serializers.IntegerField(write_only=True, required=False)
     player = PlayerLiteSerializer()
     checkpoints = CheckpointSerializer(many=True, partial=True)
 
@@ -64,10 +104,13 @@ class RaceSerializer(serializers.ModelSerializer):
             'server',
             'time',
             'playtime',
+            'playtime_add',
+            'races_add',
             'points',
             'created',
             'checkpoints',
         )
+        add_fields = ('playtime', 'races')
 
     def __init__(self, instance=None, data=fields.empty, **kwargs):
         # Workaround for http://stackoverflow.com/questions/29759838/
@@ -124,7 +167,10 @@ class RaceSerializer(serializers.ModelSerializer):
         return instance
 
 
-class PlayerSerializer(serializers.ModelSerializer):
+class PlayerSerializer(AddFieldSerializer, serializers.ModelSerializer):
+    playtime_add = serializers.IntegerField(write_only=True, required=False)
+    races_add = serializers.IntegerField(write_only=True, required=False)
+
     class Meta:
         model = Player
         fields = (
@@ -134,14 +180,19 @@ class PlayerSerializer(serializers.ModelSerializer):
             'name',
             'simplified',
             'playtime',
+            'playtime_add',
             'races',
+            'races_add',
             'maps',
             'maps_finished',
             'points',
         )
+        add_fields = ('playtime', 'races')
 
 
-class MapSerializer(serializers.ModelSerializer):
+class MapSerializer(AddFieldSerializer, serializers.ModelSerializer):
+    playtime_add = serializers.IntegerField(write_only=True, required=False)
+    races_add = serializers.IntegerField(write_only=True, required=False)
     tags = serializers.SlugRelatedField(
         many=True,
         slug_field='name',
@@ -158,12 +209,15 @@ class MapSerializer(serializers.ModelSerializer):
             'levelshotfile',
             'enabled',
             'races',
+            'races_add',
             'oneliner',
             'playtime',
+            'playtime_add',
             'created',
             'tags',
             'record',
         )
+        add_fields = ('playtime', 'races')
 
 
 class TagSerializer(serializers.ModelSerializer):
