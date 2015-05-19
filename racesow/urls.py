@@ -60,16 +60,8 @@ urlpatterns = patterns(
     # matchmaking stats of a single player
     url(r'^wmm/(?P<username>.+)$', wmm.MatchMaker.as_view()),
 
-    # api calls for server
-    (r'^api/map/$', api.APIMapList.as_view()),
-    (r'^api/map/([A-Za-z0-9-_=]+)', api.APIMap.as_view()),
-    (r'^api/player/([A-Za-z0-9-_=]+)', api.APIPlayer.as_view()),
-    (r'^api/nick/([A-Za-z0-9-_=]+)', api.APINick.as_view()),
-    (r'^api/race[/]*$', api.APIRace.as_view()),
-    (r'^api/raceall$', api.APIRaceAll.as_view()),
-
     # Temporary place for restframework api
-    url(r'^drf/', include(router.urls)),
+    url(r'^api/', include(router.urls)),
     url(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 
     (r'.+', NotFound.as_view()),

@@ -15,7 +15,7 @@ from rest_framework.test import APITestCase
 
 
 User = get_user_model()
-apiroot = '/drf'
+apiroot = '/api'
 cred = {
     'username': 'test',
     'email': None,
