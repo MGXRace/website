@@ -225,9 +225,8 @@ class MapViewSet(B64Lookup, viewsets.ModelViewSet):
       field with the best race on the map.
     - `pattern={pattern}` Filter the results to maps with names matching a
       regex pattern. `pattern` must be a urlsafe-base64 encoded string.
-    - `tags={tags}` Filter the results to maps with every tag in `tags`.
-      `tags` must be a urlsafe-base64 encoded json list. E.g.
-      `["pg", "rl"]`
+    - `tag={tag}` or `t={tag}` Filter the results to maps with a given tag.
+      To filter on multiple tags, repeat the query parameter for every tag.
     """
     lookup_field = 'name'
     queryset = models.Map.objects.all()
@@ -243,10 +242,10 @@ class MapViewSet(B64Lookup, viewsets.ModelViewSet):
             pattern = utils.b64param(self.request.query_params, 'pattern')
             queryset = queryset.filter(name__regex=pattern)
 
-        if self.request.query_params.get('tags', None):
-            tags = utils.jsonparam(self.request.query_params, 'tags')
-            for tag in tags:
-                queryset = queryset.filter(tags__name__iexact=tag)
+        tags = self.request.query_params.getlist('tag')
+        tags.extend(self.request.query_params.getlist('t'))
+        for tag in tags:
+            queryset = queryset.filter(tags__name__iexact=tag)
 
         return queryset
 
