@@ -203,7 +203,7 @@ class PlayerViewSet(B64Lookup, UpdateOrCreate, viewsets.ModelViewSet):
         return Response(data)
 
 
-class MapViewSet(B64Lookup, viewsets.ModelViewSet):
+class MapViewSet(B64Lookup, UpdateOrCreate, viewsets.ModelViewSet):
     """ViewSet for maps/ REST endpoint
 
     Routes:
@@ -260,24 +260,38 @@ class MapViewSet(B64Lookup, viewsets.ModelViewSet):
             queryset = queryset.order_by('?')
         return queryset
 
+    def set_record(self, request, instance, data):
+        """Get the map's record race"""
+        if 'record' not in request.query_params:
+            return
+
+        record = instance.race_set.filter(time__isnull=False) \
+                                  .order_by('time')[:1]
+        if record:
+            data['record'] = serializers.RaceSerializer(record[0]).data
+        else:
+            data['record'] = None
+
     def retrieve(self, request, *args, **kwargs):
         """Detail view for map
 
         This needs to be overridden to add record field.
         """
         instance = self.get_object()
+        data = self.get_serializer(instance).data
+        self.set_record(request, instance, data)
+        return Response(data)
 
-        if 'record' in request.query_params:
-            record = instance.race_set \
-                             .filter(time__isnull=False) \
-                             .order_by('time')[:1]
-            if record:
-                instance.record = record[0]
-            else:
-                instance.record = None
+    def update(self, request, *args, **kwargs):
+        """Update the player"""
+        serializer, created = self.update_or_create(request, *args, **kwargs)
+        instance = serializer.save()
+        data = serializer.data
+        self.set_record(request, instance, data)
 
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        if created:
+            return Response(data, status=status.HTTP_201_CREATED)
+        return Response(data)
 
 
 class TagViewSet(viewsets.ModelViewSet):
