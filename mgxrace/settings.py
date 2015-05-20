@@ -38,18 +38,21 @@ CELERYBEAT_SCHEDULE = {
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework.authentication.SessionAuthentication',
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
-    ),
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.IsAdminUser',),
-    'DEFAULT_FILTER_BACKENDS': ('rest_framework.filters.OrderingFilter',),
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_FILTER_BACKENDS': ['rest_framework.filters.OrderingFilter'],
     'ORDERING_PARAM': 'sort',
     'PAGE_SIZE': 50,
     'PAGINATE_BY_PARAM': 'page_size',
     'MAX_PAGINATE_BY': 100,
 }
 
+if DEBUG:
+    REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'].append('rest_framework.authentication.SessionAuthentication')
 
 ##########
 # Cors Headers
@@ -57,9 +60,7 @@ REST_FRAMEWORK = {
 
 
 CORS_ALLOW_CREDENTIALS = False
-
-if DEBUG:
-    CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_ALLOW_ALL = True
 
 
 ##########
