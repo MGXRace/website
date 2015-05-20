@@ -255,6 +255,7 @@ class Race(models.Model):
     playtime = models.BigIntegerField(default=0)
     points = models.IntegerField(default=0)
     rank = models.IntegerField(default=0)
+    races = models.IntegerField(default=0)
     created = models.DateTimeField(default=timezone.now)
     last_played = models.DateTimeField(default=timezone.now)
     history = HistoricalRecords()
