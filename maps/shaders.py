@@ -154,14 +154,16 @@ class ShaderFileParser(object):
             if len(shader) != 2:
                 continue
 
+            # the only requirements outside of stages are skybox textures, other textures are only for use in map editors
             texture_requirements[name] = set([
-                tex_filter_sky.match(x).group(1) + y
+                tex_filter_sky.match(x).group(1) + y  # generate the 6 skybox .tga strings
                 for x in filter(tex_filter_sky.match, shader[0])
                 for y in SKYBOX_ELTS
             ])
 
+            # get all texture requirements from all stages
             if shader[1]:
                 texture_requirements[name].update(
-                    reduce(lambda x, y: x | y, [set(tex_filter_stage.findall(x) for x in shader[1])])
+                    sum([tex_filter_stage.findall(stageline) for stagelist in shader[1] for stageline in stagelist], [])
                 )
         return texture_requirements
