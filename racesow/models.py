@@ -54,7 +54,7 @@ class Map(models.Model):
     """Racesow Map Model
 
     Model Fields:
-        name (str): Name of the map
+        name (str): Name of the map (unique)
         pk3file (File): File object of the map pk3
         levelshotfile (File): File object of the levelshot image
         enabled (bool): True if the map is enabled
@@ -66,7 +66,7 @@ class Map(models.Model):
         compute_points (bool): True if the map has new race times or playtimes
         last_computation (datetime): last computation of points for races on this map
     """
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     pk3file = models.FileField(upload_to='maps', blank=True)
     levelshotfile = models.FileField(upload_to='levelshots', blank=True)
     enabled = models.BooleanField(default=True)
