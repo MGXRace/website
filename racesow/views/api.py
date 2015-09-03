@@ -48,7 +48,7 @@ class APIMapList(View):
 
         # Filter by the name and/or tags
         if pattern:
-            flt = flt & Q(name__regex=pattern)
+            flt = flt & Q(name__iregex=pattern)
         for t in tags:
             flt = flt & Q(tags__name__iexact=t)
 
