@@ -433,30 +433,30 @@ class APIRaceAll(View):
         # 1.5
         try:
             map_ = Map.objects.get(name=mapname)
+            races = Race.objects.filter(map=map_, time__isnull=False).order_by('time')[:limit]
         except:
-            data = json.dumps({'error': 'Could not find map \'{}\''.format(mapname)})
-            return HttpResponse(data, content_type='application/json', status=400)
+            map_ = None
+            races = []
 
         # 1.0
         try:
             mapold_ = Mapold.objects.get(name=mapname)
+            oldraces = PlayerMap.objects.filter(map=mapold_, time__isnull=False, player__isnull=False, prejumped='false').order_by('time')[:limit]
         except:
-            data = json.dumps({'error': 'Could not find 1.0 map \'{}\''.format(mapname)})
-            return HttpResponse(data, content_type='application/json', status=400)
-
-        # 1.5
-        races = Race.objects.filter(map=map_, time__isnull=False).order_by('time')[:limit]
+            if not map_:
+                data = json.dumps({'error': 'Could not find map \'{}\''.format(mapname)})
+                return HttpResponse(data, content_type='application/json', status=400)
+            mapold_ = None
+            oldraces = []
 
         # 1.0
-        oldraces = PlayerMap.objects.filter(
-            map=mapold_, time__isnull=False, player__isnull=False, prejumped='false').order_by('time')[:limit]
 
         data = {
-            "map": mapname,
-            "oneliner": map_.oneliner,
+            "map": map_.name if map_ else mapold_.name,
+            "oneliner": map_.oneliner if map_ else '',
             "count": min(len(races) + len(oldraces), limit),
             "races": [],
-            "oldoneliner": mapold_.oneliner,
+            "oldoneliner": mapold_.oneliner if mapold_ else '',
             "oldraces": []
         }
 
